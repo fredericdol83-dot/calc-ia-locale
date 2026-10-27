@@ -106,6 +106,7 @@ class Plan:
         self.details = details      # lignes d'aperçu
         self._apply = apply_fn
         self.changes = changes      # 0 = rien à faire
+        self.prereq = None          # action conseillée avant (ex. harmoniser une colonne mal écrite)
 
     def apply(self, doc):
         um = doc.getUndoManager()
@@ -368,6 +369,11 @@ def _activate(doc, sheet):
         pass
 
 
+def _is_text_col(table, name):
+    vals = [v for v in table.column(name) if v != ""]
+    return bool(vals) and sum(to_number(v) is not None for v in vals) < len(vals) / 2 and name not in table.date_cols
+
+
 def _check_values(table, colonne_valeurs, operation):
     if operation in ("somme", "moyenne"):
         if not colonne_valeurs:
@@ -391,6 +397,22 @@ def _text_number_warning(table, colonne_valeurs, operation):
     return None
 
 
+def _messy(table, colonne):
+    vals = [v for v in table.column(colonne) if isinstance(v, str) and v]
+    groups = {}
+    for v in vals:
+        groups.setdefault(re.sub(r"\s+", " ", v).strip().lower(), set()).add(v)
+    return any(len(s) > 1 for s in groups.values())
+
+
+def _calc_line(colonne, colonne_valeurs, operation):
+    if operation == "nombre":
+        why = (" (la colonne %s contient du texte, je compte donc les lignes)" % colonne_valeurs
+               if colonne_valeurs else "")
+        return "Calcul : nombre de lignes pour chaque valeur de %s%s." % (colonne, why)
+    return "Calcul : %s de %s pour chaque valeur de %s." % (OPERATIONS[operation][1].lower(), colonne_valeurs, colonne)
+
+
 def _distinct_warning(table, colonne):
     vals = [v for v in table.column(colonne) if isinstance(v, str) and v]
     lowered = {}
@@ -406,17 +428,22 @@ def _distinct_warning(table, colonne):
 
 def prepare_tableau_croise(doc, table, colonne, colonne_valeurs="", operation=""):
     operation = operation or ("somme" if colonne_valeurs else "nombre")
+    choice_vals = colonne_valeurs
+    if operation in ("somme", "moyenne") and colonne_valeurs and _is_text_col(table, colonne_valeurs):
+        operation = "nombre"  # on ne peut pas additionner du texte : on compte
     if operation == "nombre":
-        colonne_valeurs = colonne_valeurs or ""
+        colonne_valeurs = ""
     _check_values(table, colonne_valeurs, operation)
     agg = _aggregate(table, colonne, colonne_valeurs, operation)
     what = "%s de %s" % (OPERATIONS[operation][1].lower(), colonne_valeurs) if operation != "nombre" else "nombre de lignes"
     title = "Créer un tableau croisé dynamique : %s par %s, dans une nouvelle feuille" % (what, colonne)
-    details = ["%d groupe(s). Aperçu des premiers :" % len(agg)]
+    details = [_calc_line(colonne, choice_vals, operation), "%d groupe(s). Aperçu des premiers :" % len(agg)]
     details += ["  %s : %s" % (g, _fmt_num(v)) for g, v in agg[:4]]
     for w in (_distinct_warning(table, colonne), _text_number_warning(table, colonne_valeurs, operation)):
         if w:
             details.append(w)
+    prereq = ({"action": "normaliser_texte", "colonne": colonne, "casse": ""}
+              if _messy(table, colonne) else None)
 
     def apply():
         sheet, _ = _insert_pivot(doc, table, colonne, colonne_valeurs, operation,
@@ -424,7 +451,9 @@ def prepare_tableau_croise(doc, table, colonne, colonne_valeurs="", operation=""
         _activate(doc, sheet)
         return sheet.getName()
 
-    return Plan(title, details, apply, len(agg))
+    plan = Plan(title, details, apply, len(agg))
+    plan.prereq = prereq
+    return plan
 
 
 CHARTS = {"barres": ("en barres", None), "courbe": ("en courbe", "com.sun.star.chart.LineDiagram"),
@@ -434,17 +463,24 @@ CHARTS = {"barres": ("en barres", None), "courbe": ("en courbe", "com.sun.star.c
 def prepare_graphique(doc, table, colonne, colonne_valeurs="", type_graphique="", operation=""):
     type_graphique = type_graphique or "barres"
     operation = operation or ("somme" if colonne_valeurs else "nombre")
+    choice_vals = colonne_valeurs
+    if operation in ("somme", "moyenne") and colonne_valeurs and _is_text_col(table, colonne_valeurs):
+        operation = "nombre"
+    if operation == "nombre":
+        colonne_valeurs = ""
     _check_values(table, colonne_valeurs, operation)
     agg = _aggregate(table, colonne, colonne_valeurs, operation)
     label = CHARTS[type_graphique][0]
     what = "%s de %s" % (OPERATIONS[operation][1].lower(), colonne_valeurs) if operation != "nombre" else "nombre de lignes"
     title = "Créer un graphique %s : %s par %s, dans une nouvelle feuille" % (label, what, colonne)
-    details = ["%d catégorie(s) sur le graphique." % len(agg)]
+    details = [_calc_line(colonne, choice_vals, operation), "%d catégorie(s) sur le graphique." % len(agg)]
     if len(agg) > 25:
         details.append("Attention : avec plus de 25 catégories, le graphique sera peu lisible.")
     for w in (_distinct_warning(table, colonne), _text_number_warning(table, colonne_valeurs, operation)):
         if w:
             details.append(w)
+    prereq = ({"action": "normaliser_texte", "colonne": colonne, "casse": ""}
+              if _messy(table, colonne) else None)
 
     def apply():
         sheet, pivot = _insert_pivot(doc, table, colonne, colonne_valeurs, operation,
@@ -467,7 +503,9 @@ def prepare_graphique(doc, table, colonne, colonne_valeurs="", type_graphique=""
         _activate(doc, sheet)
         return sheet.getName()
 
-    return Plan(title, details, apply, len(agg))
+    plan = Plan(title, details, apply, len(agg))
+    plan.prereq = prereq
+    return plan
 
 # ---------------------------------------------------------------------------
 # 6. Trier

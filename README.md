@@ -14,7 +14,7 @@ L'idée est simple. Un logiciel libre (LibreOffice), un modèle d'IA ouvert qui 
 
 ## Comment ça marche
 
-1. Vous écrivez votre demande dans la fenêtre de l'assistant.
+1. Le panneau analyse votre tableau et propose des idées adaptées (colonnes mal écrites, téléphones à harmoniser, doublons, totaux possibles). Vous cliquez sur une idée, ou vous écrivez votre demande en français.
 2. Le modèle local reçoit uniquement les noms des colonnes et votre phrase, jamais le contenu des cellules. Il choisit une action dans une liste fermée, avec ses paramètres.
 3. L'extension calcule elle-même ce qui va changer et vous montre un aperçu (nombre de cellules, exemples avant/après, avertissements).
 4. Vous cliquez sur Appliquer, ou pas. Le bouton « Annuler la dernière action » revient en arrière, y compris pour un tableau croisé ou un graphique (la feuille créée est retirée).
@@ -53,7 +53,7 @@ ollama pull qwen3:4b
 
 **3. Installez-la dans LibreOffice** : double-cliquez sur le fichier `.oxt`, ou dans LibreOffice ouvrez *Outils > Gestionnaire des extensions > Ajouter*. Fermez complètement LibreOffice, puis rouvrez-le.
 
-**4. Ouvrez un tableau dans Calc.** Un menu **IA locale** apparaît dans la barre du haut. Cliquez sur *Ouvrir l'assistant…*
+**4. Ouvrez un tableau dans Calc.** Cliquez sur l'icône « IA » de la barre d'outils, ou sur le menu *IA locale > Ouvrir le panneau IA locale*. Le panneau s'ouvre à droite du tableau, comme Copilot dans Excel. S'il manque Ollama ou le modèle, il vous guide, et le modèle se télécharge directement depuis le panneau.
 
 Sous Linux, il faut parfois installer en plus le paquet `libreoffice-script-provider-python`.
 

@@ -70,8 +70,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
 
     def _build(self):
         L, B = self._label, lambda n, t: self._ctl("Button", n, Label=t, MultiLine=True)
-        L("titre", "IA locale", bold=True)
-        L("etat", "", bold=True, color=TEAL, align=2)
+        L("etat", "", bold=True, color=TEAL)
         # installation
         L("setup_t", "", bold=True)
         L("setup_txt", "")
@@ -93,6 +92,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         for k in range(MAX_IDEAS):
             B("idee%d" % k, "")
             self.c["idee%d" % k].getModel().Align = 0
+            self.c["idee%d" % k].getModel().FontWeight = 150.0
+            L("idee%d_d" % k, "", color=GREY)
         L("aucune", "Rien de particulier à corriger dans ce tableau.", color=GREY)
         L("q", "Ou décrivez votre demande", bold=True)
         self._ctl("Edit", "demande", MultiLine=True, VScroll=False)
@@ -108,6 +109,9 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         L("prop_k", "Voici ce que je propose", color=GREY)
         L("prop_t", "", bold=True)
         self._ctl("Edit", "details", MultiLine=True, ReadOnly=True, VScroll=True)
+        L("compris", "", color=GREY)
+        L("prereq_t", "", bg=AMBER_BG)
+        B("btn_prereq", "")
         L("safe", "Rien n'a encore été modifié. Vérifiez, puis appliquez.", bg=AMBER_BG)
         B("btn_appliquer", "Appliquer")
         B("btn_modifier", "Modifier ma demande")
@@ -122,7 +126,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
     def _rows(self, W):
         """Lignes à afficher selon l'état : (liste de (nom, x, largeur), hauteur)."""
         full = lambda n, h: ([(n, M, W - 2 * M)], h)
-        rows = [([("titre", M, W / 2), ("etat", W / 2, W / 2 - M)], 12), (None, 4)]
+        rows = [full("etat", 12), (None, 2)]
         s = self.state
         if s == "setup":
             rows += [full("setup_t", 22), full("setup_txt", 44), full("btn_ollama", 16), (None, 3),
@@ -140,15 +144,20 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
                 if g in groups:
                     rows.append(full(lab, 10))
                     for k in groups[g]:
-                        rows.append(full("idee%d" % k, 24))
+                        rows += [full("idee%d" % k, 15), ([("idee%d_d" % k, M + 3, W - 2 * M - 3)], 12)]
             if not self.ideas:
                 rows.append(full("aucune", 12))
             rows += [(None, 6), full("q", 11), full("demande", 30),
                      ([("statut", M, W - 2 * M - 62), ("btn_proposer", W - M - 60, 60)], 16), (None, 6),
                      full("cap_t", 11), full("cap_n", 30), full("cap_a", 22), full("cap_p", 30)]
         if s == "proposition":
-            rows += [full("vous", 20), (None, 4), full("prop_k", 9), full("prop_t", 28),
-                     full("details", 84), (None, 3), full("safe", 12), (None, 4),
+            rows += [full("vous", 20), (None, 4), full("prop_k", 9), full("prop_t", 28)]
+            if self.c["compris"].getModel().Label:
+                rows.append(full("compris", 20))
+            rows += [full("details", 84), (None, 3)]
+            if self.plan is not None and self.plan.prereq:
+                rows += [full("prereq_t", 22), full("btn_prereq", 16), (None, 4)]
+            rows += [full("safe", 12), (None, 4),
                      ([("btn_appliquer", M, (W - 2 * M) * 0.55),
                        ("btn_modifier", M + (W - 2 * M) * 0.58, (W - 2 * M) * 0.42)], 18)]
         if s in ("main", "proposition") and self.history:
@@ -280,7 +289,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             self._set("table", "Aucun tableau lisible sur cette feuille")
         for k in range(MAX_IDEAS):
             if k < len(self.ideas):
-                self._set("idee%d" % k, "%s\n%s" % (self.ideas[k]["titre"], self.ideas[k]["detail"]))
+                self._set("idee%d" % k, self.ideas[k]["titre"])
+                self._set("idee%d_d" % k, self.ideas[k]["detail"])
         self._set("cap_n", "Nettoyer · " + ", ".join(t.lower() for t, _ in cap["Nettoyer"]))
         self._set("cap_a", "Analyser · " + ", ".join(t.lower() for t, _ in cap["Analyser"]))
         self._set("cap_p", "Pas encore · " + cap["Pas encore"])
@@ -302,14 +312,22 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         self._busy("")
         self.state, self.plan = "proposition", None
         self._set("vous", "")
+        self._set("compris", "")
         self._set("prop_k", "")
         self._set("prop_t", title)
         self._set("details", text)
         self.c["btn_appliquer"].getModel().Enabled = False
         self.layout()
 
-    def _show_plan(self, echo, plan, seconds=None):
+    def _show_plan(self, echo, plan, seconds=None, choice=None, compris=""):
         self.plan = plan if plan.changes else None
+        self.last = (echo, choice)
+        self._set("compris", compris)
+        if plan.prereq:
+            col = plan.prereq["colonne"]
+            self._set("prereq_t", "La colonne %s contient des variantes d'écriture (« Lyon », « LYON »…). "
+                                  "Elles seraient comptées comme des valeurs différentes." % col)
+            self._set("btn_prereq", "Harmoniser « %s » d'abord (conseillé)" % col)
         self.state = "proposition"
         self._set("vous", echo)
         self._set("prop_k", "Voici ce que je propose" + (" · en %.0f s" % seconds if seconds else ""))
@@ -327,7 +345,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             plan = actions.prepare(self._doc(), self._target_sheet(), idea["choice"])
         except actions.ActionError as e:
             return self._show_error("Je ne peux pas faire ça", str(e))
-        self._show_plan("Idée : " + idea["titre"], plan)
+        self._show_plan("Idée : " + idea["titre"], plan, choice=idea["choice"])
 
     def on_proposer(self):
         demande = self.c["demande"].getText().strip()
@@ -349,7 +367,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             self._busy("")
             return self._show_error("Je ne peux pas faire ça", str(e))
         self._busy("")
-        self._show_plan("Vous : " + demande, plan, time.time() - t0)
+        self._show_plan("Vous : " + demande, plan, time.time() - t0, choice=choice, compris=_explain(choice))
 
     def on_appliquer(self):
         if not self.plan:
@@ -366,6 +384,19 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         self.state = "main"
         self.c["demande"].setText("")
         self.refresh_ideas()
+
+    def on_prereq(self):
+        """Applique l'harmonisation conseillée, puis recalcule la proposition initiale."""
+        if not self.plan or not self.plan.prereq:
+            return
+        doc, sheet = self._doc(), self._target_sheet()
+        fix = actions.prepare(doc, sheet, self.plan.prereq)
+        fix.apply(doc)
+        self.history.insert(0, "%s  %s" % (time.strftime("%H:%M"), fix.title))
+        self.c["hist"].getModel().StringItemList = tuple(self.history)
+        echo, choice = self.last
+        plan = actions.prepare(doc, sheet, choice)
+        self._show_plan(echo, plan, choice=choice, compris=self.c["compris"].getModel().Label)
 
     def on_modifier(self):
         self.state, self.plan = "main", None
@@ -414,6 +445,25 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             return
         self._busy("Modèle installé.")
         self.check_setup()
+
+
+ACTION_NAMES = {"normaliser_texte": "harmoniser une colonne", "formater_telephone": "formater des téléphones",
+                "supprimer_doublons": "supprimer des doublons", "tableau_croise": "tableau croisé",
+                "graphique": "graphique", "trier": "trier"}
+
+
+def _explain(choice):
+    """Ce que le modèle a compris, en clair, pour que l'utilisateur puisse vérifier."""
+    parts = [ACTION_NAMES.get(choice.get("action"), choice.get("action", ""))]
+    if choice.get("colonne"):
+        parts.append("colonne %s" % choice["colonne"])
+    if choice.get("colonne_valeurs"):
+        parts.append("valeurs : %s" % choice["colonne_valeurs"])
+    if choice.get("operation"):
+        parts.append("calcul : %s" % choice["operation"])
+    if choice.get("ordre"):
+        parts.append("ordre %s" % choice["ordre"].replace("decroissant", "décroissant"))
+    return "J'ai compris : " + ", ".join(parts) + "."
 
 
 def open_sidebar(ctx):

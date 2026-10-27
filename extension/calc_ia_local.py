@@ -17,10 +17,6 @@ class Launcher(unohelper.Base, XJobExecutor):
 
     def trigger(self, args):
         try:
-            if args == "dialog":
-                from calc_ia.dialog import open_assistant
-                open_assistant(self.ctx)
-                return
             from calc_ia.panel import open_sidebar
             open_sidebar(self.ctx)
         except Exception:

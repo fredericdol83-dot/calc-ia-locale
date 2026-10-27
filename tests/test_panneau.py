@@ -63,11 +63,11 @@ def main():
 
     t.check(p.state == "main", "panneau prêt quand Ollama et le modèle sont là")
     t.check(label("etat") == "● 100 % local", "indicateur « 100 % local »")
-    t.check(len(p.ideas) == 5 and "Ville" in label("idee0"), "5 idées adaptées au tableau, la première sur Ville")
+    t.check(len(p.ideas) == 5 and "Ville" in label("idee0") and label("idee0_d"), "5 idées adaptées au tableau, titre et détail séparés")
     t.check(label("cap_p").startswith("Pas encore"), "le panneau dit ce qu'il ne sait pas faire")
     print("  " + label("table"))
     for k in range(5):
-        print("  idée :", label("idee%d" % k).replace("\n", " · "))
+        print("  idée :", label("idee%d" % k), "·", label("idee%d_d" % k))
 
     p.on_idea(2)  # doublons
     t.check(p.state == "proposition" and "104" in p.c["details"].getText(), "clic sur une idée : proposition chiffrée sans passer par le modèle")
@@ -83,6 +83,11 @@ def main():
     p.c["demande"].setText("moyenne des devis par ville")
     p.on_proposer()
     t.check(p.state == "proposition" and "oyenne" in label("prop_t"), "demande libre : proposition du modèle local")
+    t.check(label("compris").startswith("J'ai compris : tableau croisé, colonne Ville"), "le panneau dit ce que le modèle a compris")
+    t.check(p.plan.prereq is not None and "Ville" in label("btn_prereq"), "colonne mal écrite : harmoniser d'abord est proposé")
+    p.on_prereq()
+    villes = set(dialog.actions.Table(doc.Sheets.getByIndex(0)).column("Ville"))
+    t.check(len(villes) == 8 and p.plan.prereq is None, "harmonisation faite, proposition recalculée sans avertissement")
     p.on_modifier()
     t.check(p.state == "main", "Modifier ma demande : retour à l'accueil")
 

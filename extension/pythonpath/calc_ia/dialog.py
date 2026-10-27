@@ -6,7 +6,7 @@ import traceback
 
 import uno
 import unohelper
-from com.sun.star.awt import XActionListener
+from com.sun.star.awt import XActionListener, XTopWindowListener
 
 from calc_ia import actions, llm
 
@@ -47,6 +47,22 @@ def save_config(cfg):
             json.dump(cfg, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
+
+
+class _CloseListener(unohelper.Base, XTopWindowListener):
+    def __init__(self, owner):
+        self.owner = owner
+
+    def windowClosing(self, ev):
+        self.owner.on_fermer()
+
+    def windowOpened(self, ev): pass
+    def windowClosed(self, ev): pass
+    def windowMinimized(self, ev): pass
+    def windowNormalized(self, ev): pass
+    def windowActivated(self, ev): pass
+    def windowDeactivated(self, ev): pass
+    def disposing(self, ev): pass
 
 
 class Assistant(unohelper.Base, XActionListener):
@@ -173,6 +189,7 @@ class Assistant(unohelper.Base, XActionListener):
                                 uno.getConstantByName("com.sun.star.awt.PosSize.POS"))
         except Exception:
             pass
+        self.dlg.addTopWindowListener(_CloseListener(self))  # la croix ferme la fenêtre
         self.dlg.setVisible(True)
         self.dlg.getControl("demande").setFocus()
         _open.append(self)

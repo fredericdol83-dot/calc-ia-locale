@@ -106,12 +106,15 @@ def main():
     check(m == sorted(m, reverse=True), "tri décroissant des montants")
 
     for bad in ({"action": "aucune", "colonne": ""}, {"action": "trier", "colonne": ""},
-                {"action": "tableau_croise", "colonne": "Ville", "colonne_valeurs": "Email", "operation": "somme"}):
+                {"action": "tableau_croise", "colonne": "Inconnue", "colonne_valeurs": "", "operation": "nombre"}):
         try:
             actions.prepare(doc, sheet, bad)
             check(False, "refus attendu pour %s" % bad)
         except actions.ActionError as e:
             check(True, "refus clair : %s" % str(e).splitlines()[0])
+
+    p = actions.prepare(doc, sheet, {"action": "tableau_croise", "colonne": "Ville", "colonne_valeurs": "Email", "operation": "somme"})
+    check("je compte donc les lignes" in p.details[0], "somme d'une colonne de texte : on compte et on l'explique")
 
     doc.close(True)
     print("\n%s" % ("TOUS LES TESTS PASSENT" if not check.failed else "%d échec(s)" % check.failed))
