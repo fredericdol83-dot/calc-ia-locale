@@ -4,6 +4,8 @@ Un petit assistant d'IA pour LibreOffice Calc, inspiré de Copilot dans Excel, m
 
 Logiciel libre, modèle d'IA ouvert, aucune donnée envoyée sur Internet, et toujours sous votre contrôle. L'IA propose, vous validez.
 
+![Le panneau « IA locale » à droite du tableur, avec les idées calculées pour un fichier de contacts fictif](docs/captures/1-idees.png)
+
 > **Une preuve de concept, pas un produit fini.** Elle montre qu'on peut déjà utiliser l'IA dans un tableur libre en gardant la maîtrise de ses données. Elle a été testée sur Windows et Linux, pas encore sur Mac. Par précaution, travaillez sur une copie de vos fichiers importants.
 
 ## Pourquoi
@@ -95,7 +97,7 @@ tests/         tests automatiques avec LibreOffice sans interface
 exemples/      fichier d'essai
 ```
 
-Les contributions sont bienvenues : retours sur vos fichiers réels, tests sur Mac, nouvelles actions, autres formats de téléphone.
+Les contributions sont bienvenues : retours d'usage, tests sur Mac, nouvelles actions, autres formats de téléphone. Voir [CONTRIBUTING.md](CONTRIBUTING.md), et ne joignez jamais vos fichiers réels.
 
 ## Licence et transparence
 

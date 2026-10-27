@@ -367,7 +367,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             self.layout()
             return
         if llm.is_local(self.cfg["url"]):
-            self._set("etat", "● 100 % local, rien ne sort de ce PC")
+            self._set("etat", "● 100 % local")
+            self.c["etat"].getModel().HelpText = "Rien ne sort de ce PC : le modèle tourne sur votre ordinateur."
             self.c["etat"].getModel().TextColor = TEAL
         else:
             self._set("etat", "● Attention : modèle sur un autre ordinateur (%s)" % self.cfg["url"])

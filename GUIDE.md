@@ -37,9 +37,15 @@ Une fois le modèle téléchargé, Internet n'est plus nécessaire.
 
 **Les idées.** Le panneau lit votre tableau et propose ce qui peut être amélioré ou analysé. Cliquez sur une idée. Une proposition chiffrée s'affiche, et rien n'est encore modifié.
 
+![Les idées proposées pour un fichier de contacts fictif](docs/captures/1-idees.png)
+
 **Une demande libre.** Écrivez ce que vous voulez, avec vos mots, par exemple « moyenne des devis par ville », puis cliquez sur Proposer. Le panneau vous dit ce qu'il a compris.
 
 **Vérifier, puis appliquer.** Lisez l'aperçu, avec le nombre de cellules modifiées, des exemples et les avertissements. Si l'action supprime ou modifie des données, le panneau le signale et propose d'enregistrer une copie de sauvegarde. Cliquez ensuite sur Appliquer.
+
+![Aperçu avant suppression des doublons, avec l'avertissement et le bouton de copie de sauvegarde](docs/captures/2-apercu.png)
+
+![Résultat : un graphique créé dans une nouvelle feuille, avec le bouton pour annuler](docs/captures/3-resultat.png)
 
 **Revenir en arrière.** Le bouton « Annuler cette action » rétablit l'état précédent.
 
