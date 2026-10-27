@@ -38,8 +38,8 @@ def main():
 
     doc, s = open_copy(d, "contacts-fictifs.ods")
     ideas = show("contacts", s)
-    check(kinds(ideas) == ["normaliser_texte", "formater_telephone", "supprimer_doublons", "tableau_croise"][:len(ideas)]
-          and len(ideas) == 4, "contacts : villes, téléphones, doublons, tableau croisé")
+    check(kinds(ideas) == ["normaliser_texte", "formater_telephone", "supprimer_doublons", "tableau_croise", "graphique"],
+          "contacts : villes, téléphones, doublons, tableau croisé, graphique")
     check(any("Ville" in i["titre"] for i in ideas), "contacts : la colonne Ville est repérée")
     check(not any("Email" in i["titre"] and i["choice"]["action"] == "normaliser_texte" for i in ideas),
           "contacts : on ne propose pas de « mettre en forme » les emails")

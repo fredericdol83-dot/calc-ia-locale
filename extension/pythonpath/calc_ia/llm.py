@@ -102,3 +102,27 @@ def choose_action(base_url, model, headers, demande, timeout=180):
         return json.loads(res["message"]["content"])
     except Exception:
         raise LLMError("Réponse du modèle illisible. Reformulez votre demande.")
+
+
+def pull_model(base_url, model, progress=None, timeout=3600):
+    """Télécharge un modèle via Ollama. progress(texte, fraction ou None) est appelé au fil de l'eau."""
+    req = urllib.request.Request(base_url.rstrip("/") + "/api/pull",
+                                 data=json.dumps({"model": model, "stream": True}).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            for line in r:
+                if not line.strip():
+                    continue
+                ev = json.loads(line.decode("utf-8"))
+                if ev.get("error"):
+                    raise LLMError("Téléchargement impossible : %s" % ev["error"])
+                total, done = ev.get("total"), ev.get("completed")
+                frac = (done / total) if total and done else None
+                if progress:
+                    progress(ev.get("status", ""), frac)
+                if ev.get("status") == "success":
+                    return True
+    except urllib.error.URLError as e:
+        raise LLMError("Ollama ne répond pas : %s" % e)
+    return True

@@ -53,7 +53,7 @@ def _formats(values):
     return {re.sub(r"\d", "9", v.strip()) for v in values if isinstance(v, str) and v.strip()}
 
 
-def suggestions(sheet, limit=4):
+def suggestions(sheet, limit=5):
     """Liste de dict : titre, detail, choice (action prête à préparer, sans passer par le modèle)."""
     table = actions.Table(sheet)
     if not table.rows:
@@ -91,7 +91,11 @@ def suggestions(sheet, limit=4):
     nums.sort(key=lambda p: (bool(NON_ADDITIVE.search(p["name"])), not PREFER_NUM_NAMES.search(p["name"])))
     if cats and nums:
         c, v = cats[0], nums[0]
-        pivots.append({"titre": "Total de « %s » par « %s »" % (v["name"], c["name"]),
+        pivots.append({"titre": "Graphique de « %s » par « %s »" % (v["name"], c["name"]),
+                       "detail": "Graphique en barres dans une nouvelle feuille",
+                       "choice": {"action": "graphique", "colonne": c["name"], "colonne_valeurs": v["name"],
+                                  "type_graphique": "barres", "operation": "somme"}})
+        pivots.insert(0, {"titre": "Total de « %s » par « %s »" % (v["name"], c["name"]),
                     "detail": "Tableau croisé dynamique dans une nouvelle feuille",
                     "choice": {"action": "tableau_croise", "colonne": c["name"],
                                "colonne_valeurs": v["name"], "operation": "somme"}})
@@ -100,9 +104,46 @@ def suggestions(sheet, limit=4):
         pivots.append({"titre": "Nombre de lignes par « %s »" % c["name"],
                     "detail": "Tableau croisé dynamique dans une nouvelle feuille",
                     "choice": {"action": "tableau_croise", "colonne": c["name"], "operation": "nombre"}})
-    # une idée de chaque sorte d'abord, puis les autres harmonisations
-    out = harm[:1] + phones[:1] + dups[:1] + pivots[:1] + harm[1:] + phones[1:]
-    return out[:limit]
+    for i in harm + phones + dups:
+        i["groupe"] = "Nettoyer"
+    for i in pivots:
+        i["groupe"] = "Analyser"
+    # jusqu'à 3 idées de nettoyage (une de chaque sorte d'abord), puis 2 d'analyse
+    clean = (harm[:1] + phones[:1] + dups[:1] + harm[1:] + phones[1:])[:3]
+    return (clean + pivots[:2])[:limit]
+
+
+def capabilities(sheet):
+    """Ce que l'outil sait faire, avec des exemples construits sur les colonnes du tableau ouvert."""
+    try:
+        t = actions.Table(sheet)
+        profs = [profile(t, h) for h in t.headers]
+    except Exception:
+        profs = []
+    def first(kind, default):
+        for p in profs:
+            if p["kind"] == kind:
+                return p["name"]
+        return default
+    texte = first("texte", "Ville")
+    nombre = next((p["name"] for p in profs if p["kind"] == "nombre" and not SKIP_NUM_NAMES.search(p["name"])), "Montant")
+    email = first("email", texte)
+    tel = first("telephone", "Téléphone")
+    return {
+        "Nettoyer": [
+            ("Harmoniser l'écriture d'une colonne", "uniformise la colonne %s" % texte),
+            ("Mettre en majuscules ou minuscules", "mets la colonne %s en majuscules" % texte),
+            ("Formater des téléphones français", "mets la colonne %s au format 06 12 34 56 78" % tel),
+            ("Supprimer les doublons", "supprime les doublons sur la colonne %s" % email),
+            ("Trier le tableau", "trie par %s du plus grand au plus petit" % nombre),
+        ],
+        "Analyser": [
+            ("Tableau croisé (total, moyenne, nombre)", "total de %s par %s" % (nombre, texte)),
+            ("Graphique en barres, courbe ou camembert", "camembert de %s par %s" % (nombre, texte)),
+        ],
+        "Pas encore": "rédiger ou traduire du texte, écrire des formules, fusionner des fichiers, "
+                      "envoyer des mails. L'assistant le dira si votre demande sort de ces actions.",
+    }
 
 
 def describe(sheet):
