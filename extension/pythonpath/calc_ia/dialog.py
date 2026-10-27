@@ -11,7 +11,7 @@ from com.sun.star.awt import XActionListener
 from calc_ia import actions, llm
 
 CONFIG = os.path.join(os.path.expanduser("~"), ".calc-ia-locale.json")
-DEFAULTS = {"url": "http://localhost:11434", "model": "qwen2.5:3b"}
+DEFAULTS = {"url": "http://localhost:11434", "model": "qwen3:4b"}
 EXEMPLES = ("Exemples : « supprime les doublons sur l'email », « total des devis par ville », "
             "« trie par montant décroissant »")
 

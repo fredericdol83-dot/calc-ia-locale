@@ -39,14 +39,14 @@ Pour toute autre demande (envoyer un mail, traduire, rédiger…), l'assistant r
 - LibreOffice 7.0 ou plus récent ([libreoffice.org](https://fr.libreoffice.org/download/telecharger-libreoffice/)).
 - Ollama, le logiciel qui fait tourner les modèles d'IA en local ([ollama.com](https://ollama.com/download)).
 - Un ordinateur avec 8 Go de RAM au minimum, 16 Go conseillés. Pas besoin de carte graphique.
-- Environ 2 Go d'espace disque pour le modèle.
+- Environ 3 Go d'espace disque pour le modèle.
 
 ## Installation (environ 10 minutes)
 
 **1. Installez Ollama**, puis ouvrez un terminal (sous Windows, touche Windows, tapez `cmd`, Entrée) et téléchargez le modèle conseillé :
 
 ```
-ollama pull qwen2.5:3b
+ollama pull qwen3:4b
 ```
 
 **2. Téléchargez l'extension** : le fichier `calc-ia-locale.oxt` dans la page [Releases](../../releases) de ce dépôt.
@@ -87,14 +87,23 @@ Le dossier `exemples/` contient `contacts-fictifs.ods`, un fichier de 305 contac
 Sur un PC portable ordinaire (16 Go de RAM, processeur AMD, sans carte graphique) :
 
 - Un assistant généraliste existant, piloté par des modèles locaux de 3 à 7 milliards de paramètres, n'a réussi aucune tâche de nettoyage (réflexion sans fin, plan jamais exécuté, ou colonnes écrasées par erreur).
-- Avec l'approche de cette extension (liste fermée d'actions), `qwen2.5:3b` a choisi la bonne action sur 18 demandes de test sur 20, en 4,8 secondes en moyenne. Le modèle Mistral 7B a obtenu 15 sur 20 en 9 secondes, et accepte plus souvent des demandes hors périmètre.
+- Avec l'approche de cette extension (liste fermée d'actions), nous avons comparé neuf petits modèles ouverts sur 20 demandes de test. Les quatre meilleurs :
 
-Ce sont des mesures sur un jeu de 20 demandes, pas une étude. Vos résultats peuvent varier.
+| Modèle | Bonnes réponses | Temps moyen | Mémoire | Licence |
+|---|---|---|---|---|
+| qwen3:4b (par défaut) | 20/20 | 5,8 s | 3,2 Go | Apache 2.0 |
+| qwen2.5:3b | 18/20 | 5,1 s | 2,2 Go | Qwen Research (à vérifier) |
+| qwen3:1.7b | 17/20 | 4,2 s | 1,9 Go | Apache 2.0 |
+| granite3.3:2b | 16/20 | 4,4 s | 2,0 Go | Apache 2.0 |
+
+Avec 8 Go de RAM, préférez `qwen3:1.7b`, plus léger. Le script `tests/benchmark_modeles.mjs` permet de refaire la comparaison chez vous.
+
+Ce sont des mesures sur un jeu de 20 demandes, rédigé par nous et ayant servi à mettre au point la consigne. Vos résultats peuvent varier.
 
 ## Dépannage
 
 - **« Ollama ne répond pas »** : lancez Ollama depuis le menu Démarrer (son icône apparaît près de l'horloge), puis réessayez.
-- **« Le modèle n'est pas installé »** : tapez `ollama pull qwen2.5:3b` dans un terminal.
+- **« Le modèle n'est pas installé »** : tapez `ollama pull qwen3:4b` dans un terminal.
 - **Le menu IA locale n'apparaît pas** : vérifiez dans *Outils > Gestionnaire des extensions* que l'extension est activée, puis redémarrez LibreOffice en entier (y compris le démarrage rapide, s'il est actif).
 - **Changer de modèle** : tapez son nom dans le champ « Modèle » de la fenêtre. Le choix est mémorisé.
 

@@ -84,8 +84,16 @@ def choose_action(base_url, model, headers, demande, timeout=180):
         "messages": [{"role": "system", "content": system_prompt(headers)},
                      {"role": "user", "content": demande}],
     }
+    # mode « réflexion » désactivé : inutile pour choisir dans une liste, et très lent sur CPU
+    payload["think"] = False
     try:
-        res = _post(base_url.rstrip("/") + "/api/chat", payload, timeout)
+        try:
+            res = _post(base_url.rstrip("/") + "/api/chat", payload, timeout)
+        except urllib.error.HTTPError as e:
+            if "think" not in e.read().decode("utf-8", "ignore").lower():
+                raise
+            del payload["think"]  # modèle ou version d'Ollama sans ce réglage
+            res = _post(base_url.rstrip("/") + "/api/chat", payload, timeout)
     except urllib.error.URLError as e:
         raise LLMError("Erreur de communication avec Ollama : %s" % e)
     except Exception as e:

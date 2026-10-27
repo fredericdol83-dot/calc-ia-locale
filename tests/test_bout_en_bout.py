@@ -32,7 +32,7 @@ class FakeOllama(BaseHTTPRequestHandler):
         self.wfile.write(b)
 
     def do_GET(self):
-        self._send({"models": [{"name": "qwen2.5:3b"}]})
+        self._send({"models": [{"name": "qwen3:4b"}]})
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
