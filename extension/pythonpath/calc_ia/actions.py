@@ -22,8 +22,23 @@ def col_letter(i):
     return s
 
 
+NUM_TEXT = re.compile(r"^-?\d{1,3}([ \u00a0\u202f]?\d{3})*([.,]\d+)?$|^-?\d+([.,]\d+)?$")
+
+
+def to_number(v):
+    """Nombre réel, ou nombre saisi comme du texte (« 12,50 », « 1 234,5 »). Sinon None."""
+    if isinstance(v, float):
+        return v
+    if isinstance(v, str):
+        t = v.strip().replace("€", "").strip()
+        if t and NUM_TEXT.match(t):
+            return float(re.sub(r"[ \u00a0\u202f]", "", t).replace(",", "."))
+    return None
+
+
 class Table:
-    """Zone utilisée de la feuille, en-têtes sur la première ligne."""
+    """Le tableau de la feuille : la ligne d'en-têtes est repérée automatiquement
+    (un titre ou des lignes vides au-dessus sont ignorés), puis les données en dessous."""
 
     def __init__(self, sheet):
         self.sheet = sheet
@@ -31,17 +46,38 @@ class Table:
         cur.gotoStartOfUsedArea(False)
         cur.gotoEndOfUsedArea(True)
         a = cur.getRangeAddress()
-        self.c0, self.r0, self.c1, self.r1 = a.StartColumn, a.StartRow, a.EndColumn, a.EndRow
+        c0, r0, c1, r1 = a.StartColumn, a.StartRow, a.EndColumn, a.EndRow
+        data = sheet.getCellRangeByPosition(c0, r0, c1, r1).getDataArray()
+        filled = [sum(1 for v in row if v != "") for row in data[:20]]
+        best = max(filled) if filled else 0
+        h = 0
+        for k, n in enumerate(filled[:10]):
+            if n >= max(2, 0.6 * best) or n == best:
+                h = k
+                break
+        head = data[h]
+        cols = [i for i, v in enumerate(head) if v != ""] or [0]
+        first, last = cols[0], cols[-1]
+        self.c0, self.c1, self.r0, self.r1 = c0 + first, c0 + last, r0 + h, r1
         self.range = sheet.getCellRangeByPosition(self.c0, self.r0, self.c1, self.r1)
-        data = self.range.getDataArray()
-        raw = [str(v).strip() if v != "" else "" for v in data[0]]
         self.headers = []
-        for i, h in enumerate(raw):
-            name = h or "Colonne " + col_letter(self.c0 + i)
+        for i, v in enumerate(head[first:last + 1]):
+            name = (str(v).strip() if v != "" else "") or "Colonne " + col_letter(self.c0 + i)
             while name in self.headers:
                 name += " (bis)"
             self.headers.append(name)
-        self.rows = [list(r) for r in data[1:]]
+        self.rows = [list(r[first:last + 1]) for r in data[h + 1:]]
+        self.date_cols = set()
+        for i in range(len(self.headers)):
+            for n, r in enumerate(self.rows[:30]):
+                if isinstance(r[i], float):
+                    try:
+                        cell = sheet.getCellByPosition(self.c0 + i, self.r0 + 1 + n)
+                        if _is_date_cell(sheet, cell):
+                            self.date_cols.add(self.headers[i])
+                    except Exception:
+                        pass
+                    break
 
     def idx(self, name):
         if name not in self.headers:
@@ -51,6 +87,13 @@ class Table:
     def column(self, name):
         i = self.idx(name)
         return [r[i] for r in self.rows]
+
+
+def _is_date_cell(sheet, cell):
+    # le type de format (date, heure…) se lit dans le gestionnaire de formats du document
+    # une date est stockée comme un nombre mais affichée « 15/03/2026 » ou « 2026-03-15 »
+    txt = cell.getString().strip()
+    return bool(re.match(r"^\d{1,4}[/\-]\d{1,2}[/\-]\d{1,4}", txt) or re.match(r"^\d{1,2}\.\d{1,2}\.\d{2,4}$", txt))
 
 
 class ActionError(Exception):
@@ -103,11 +146,22 @@ def _proper(s):
     return re.sub(r"[^\s\-']+", lambda m: m.group(0)[:1].upper() + m.group(0)[1:].lower(), s)
 
 
+def _majority_map(values):
+    """Pour chaque groupe de variantes (« Lyon », « LYON », « lyon »), la variante la plus fréquente."""
+    groups = {}
+    for v in values:
+        if isinstance(v, str) and v.strip():
+            clean = re.sub(r"\s+", " ", v.strip())
+            groups.setdefault(clean.lower(), {}).setdefault(clean, 0)
+            groups[clean.lower()][clean] += 1
+    return {k: max(c.items(), key=lambda kv: (kv[1], kv[0] != kv[0].upper()))[0] for k, c in groups.items()}
+
+
 CASSES = {
     "premiere_lettre_majuscule": ("première lettre de chaque mot en majuscule", _proper),
     "tout_en_majuscules": ("tout en majuscules", lambda s: s.upper()),
     "tout_en_minuscules": ("tout en minuscules", lambda s: s.lower()),
-    "": ("casse inchangée", lambda s: s),
+    "": ("écriture la plus fréquente pour chaque valeur", None),
 }
 
 
@@ -115,6 +169,9 @@ def prepare_normaliser_texte(table, colonne, casse=""):
     i = table.idx(colonne)
     label, fn = CASSES.get(casse or "", CASSES[""])
     old = table.column(colonne)
+    if fn is None:
+        majority = _majority_map(old)
+        fn = lambda t: majority.get(t.lower(), t)
     new, pairs = [], []
     for v in old:
         if isinstance(v, str) and v:
@@ -124,7 +181,7 @@ def prepare_normaliser_texte(table, colonne, casse=""):
             new.append(n)
         else:
             new.append(v)
-    title = "Nettoyer la colonne %s (espaces superflus retirés, %s)" % (colonne, label)
+    title = "Harmoniser l'écriture de la colonne %s (espaces superflus retirés, %s)" % (colonne, label)
     details = ["%d cellule(s) sur %d seront modifiées." % (len(pairs), len(old))]
     details += _examples(pairs)
     return Plan(title, details, lambda: _write_column(table, i, new), len(pairs))
@@ -239,10 +296,10 @@ def _aggregate(table, colonne, colonne_valeurs, operation):
             continue
         g = _fmt_num(g) if isinstance(g, float) else g
         a = acc.setdefault(g, [0.0, 0])
-        v = r[vi]
+        v = r[vi] if isinstance(r[vi], float) else None  # comme LibreOffice : le texte n'est pas additionné
         if operation == "nombre":
             a[1] += 1
-        elif isinstance(v, float):
+        elif v is not None:
             a[0] += v
             a[1] += 1
     res = {}
@@ -315,10 +372,23 @@ def _check_values(table, colonne_valeurs, operation):
     if operation in ("somme", "moyenne"):
         if not colonne_valeurs:
             raise ActionError("Précisez sur quelle colonne calculer la %s." % operation)
+        if colonne_valeurs in table.date_cols:
+            raise ActionError("La colonne %s contient des dates : impossible d'en faire la %s."
+                              % (colonne_valeurs, operation))
         vals = [v for v in table.column(colonne_valeurs) if v != ""]
-        if vals and sum(isinstance(v, float) for v in vals) < len(vals) / 2:
+        if vals and sum(to_number(v) is not None for v in vals) < len(vals) / 2:
             raise ActionError("La colonne %s contient surtout du texte : impossible d'en faire la %s."
                               % (colonne_valeurs, operation))
+
+
+def _text_number_warning(table, colonne_valeurs, operation):
+    if operation == "nombre" or not colonne_valeurs:
+        return None
+    n = sum(1 for v in table.column(colonne_valeurs) if isinstance(v, str) and to_number(v) is not None)
+    if n:
+        return ("Attention : %d valeur(s) de %s sont saisies comme du texte et ne seront pas comptées. "
+                "Convertissez-les en nombres pour un total exact." % (n, colonne_valeurs))
+    return None
 
 
 def _distinct_warning(table, colonne):
@@ -344,9 +414,9 @@ def prepare_tableau_croise(doc, table, colonne, colonne_valeurs="", operation=""
     title = "Créer un tableau croisé dynamique : %s par %s, dans une nouvelle feuille" % (what, colonne)
     details = ["%d groupe(s). Aperçu des premiers :" % len(agg)]
     details += ["  %s : %s" % (g, _fmt_num(v)) for g, v in agg[:4]]
-    w = _distinct_warning(table, colonne)
-    if w:
-        details.append(w)
+    for w in (_distinct_warning(table, colonne), _text_number_warning(table, colonne_valeurs, operation)):
+        if w:
+            details.append(w)
 
     def apply():
         sheet, _ = _insert_pivot(doc, table, colonne, colonne_valeurs, operation,
@@ -372,9 +442,9 @@ def prepare_graphique(doc, table, colonne, colonne_valeurs="", type_graphique=""
     details = ["%d catégorie(s) sur le graphique." % len(agg)]
     if len(agg) > 25:
         details.append("Attention : avec plus de 25 catégories, le graphique sera peu lisible.")
-    w = _distinct_warning(table, colonne)
-    if w:
-        details.append(w)
+    for w in (_distinct_warning(table, colonne), _text_number_warning(table, colonne_valeurs, operation)):
+        if w:
+            details.append(w)
 
     def apply():
         sheet, pivot = _insert_pivot(doc, table, colonne, colonne_valeurs, operation,
