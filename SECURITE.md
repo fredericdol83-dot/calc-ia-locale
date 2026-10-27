@@ -30,7 +30,7 @@ Une fois le modèle téléchargé, tout fonctionne sans connexion Internet. Pour
 ## Ce que l'extension ne garantit pas
 
 - Votre ordinateur reste exposé aux risques habituels (vol, virus, absence de sauvegarde). « Local » ne veut pas dire « invulnérable ».
-- Le modèle peut se tromper sur un détail. C'est pour cela que l'aperçu est obligatoire : lisez-le avant d'appliquer, et travaillez sur une copie de vos fichiers importants.
+- Le modèle peut se tromper sur un détail. C'est pour cela que l'aperçu est obligatoire. Lisez-le avant d'appliquer, et travaillez sur une copie de vos fichiers importants.
 - Ollama et le modèle sont des logiciels tiers, téléchargés depuis leurs sources officielles. Leur sécurité relève de leurs éditeurs (Ollama, Alibaba pour Qwen3, sous licence Apache 2.0). Ollama est un service qui tourne en permanence sur le PC et a déjà connu des failles, corrigées depuis (par exemple CVE-2024-37032 en 2024). Tenez-le à jour.
 - Le fichier `.oxt` n'est pas signé numériquement. Vérifiez son empreinte avec celle publiée dans la release.
 

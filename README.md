@@ -2,7 +2,7 @@
 
 Un petit assistant d'IA pour LibreOffice Calc, inspiré de Copilot dans Excel, mais qui fonctionne entièrement sur votre ordinateur. Il repère ce qui peut être amélioré dans votre tableau, comprend des demandes en français comme « supprime les doublons sur l'email » ou « total des devis par ville », et vous montre ce qui va changer avant de le faire.
 
-Logiciel libre, modèle d'IA ouvert, aucune donnée envoyée sur Internet, et toujours sous votre contrôle : l'IA propose, vous validez.
+Logiciel libre, modèle d'IA ouvert, aucune donnée envoyée sur Internet, et toujours sous votre contrôle. L'IA propose, vous validez.
 
 > **Une preuve de concept, pas un produit fini.** Elle montre qu'on peut déjà utiliser l'IA dans un tableur libre en gardant la maîtrise de ses données. Elle a été testée sur Windows et Linux, pas encore sur Mac. Par précaution, travaillez sur une copie de vos fichiers importants.
 
