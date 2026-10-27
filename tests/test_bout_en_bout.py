@@ -13,7 +13,7 @@ import test_actions as t  # noqa: E402
 from calc_ia import dialog  # noqa: E402
 
 REPONSES = {
-    "nettoie les villes": {"action": "normaliser_texte", "colonne": "Ville", "casse": "nom_propre"},
+    "nettoie les villes": {"action": "normaliser_texte", "colonne": "Ville", "casse": "premiere_lettre_majuscule"},
     "doublons email": {"action": "supprimer_doublons", "colonne": "Email"},
     "envoie un mail": {"action": "aucune", "colonne": ""},
 }

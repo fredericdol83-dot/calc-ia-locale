@@ -104,9 +104,9 @@ def _proper(s):
 
 
 CASSES = {
-    "nom_propre": ("première lettre de chaque mot en majuscule", _proper),
-    "majuscules": ("tout en majuscules", lambda s: s.upper()),
-    "minuscules": ("tout en minuscules", lambda s: s.lower()),
+    "premiere_lettre_majuscule": ("première lettre de chaque mot en majuscule", _proper),
+    "tout_en_majuscules": ("tout en majuscules", lambda s: s.upper()),
+    "tout_en_minuscules": ("tout en minuscules", lambda s: s.lower()),
     "": ("casse inchangée", lambda s: s),
 }
 

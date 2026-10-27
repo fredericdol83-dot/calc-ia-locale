@@ -19,7 +19,7 @@ const SCHEMA = {
   properties: {
     action: { type: "string", enum: ACTIONS },
     colonne: { type: "string", enum: [...COLONNES, ""] },
-    casse: { type: "string", enum: ["nom_propre", "majuscules", "minuscules", ""] },
+    casse: { type: "string", enum: ["premiere_lettre_majuscule", "tout_en_majuscules", "tout_en_minuscules", ""] },
     colonne_valeurs: { type: "string", enum: [...COLONNES, ""] },
     operation: { type: "string", enum: ["somme", "moyenne", "nombre", ""] },
     type_graphique: { type: "string", enum: ["barres", "courbe", "camembert", ""] },
@@ -31,20 +31,20 @@ const SYSTEME =
   "Tu traduis une demande d'utilisateur de tableur en UNE action parmi une liste fermée. Tu ne modifies rien toi-même.\n" +
   "Colonnes du tableau : " + COLONNES.join(", ") + ".\n" +
   "Actions possibles :\n" +
-  "- normaliser_texte : nettoyer une colonne de texte (espaces superflus, casse). Champs : colonne, casse. casse = majuscules pour TOUT en majuscules (DUPONT), nom_propre pour seulement la première lettre de chaque mot (Dupont), minuscules pour tout en minuscules, vide pour ne changer que les espaces.\n" +
-  "- formater_telephone : mettre une colonne de numéros de téléphone au format 06 12 34 56 78. Champ : colonne.\n" +
+  "- normaliser_texte : nettoyer une colonne de texte (espaces superflus, casse). Champs : colonne, casse. casse = premiere_lettre_majuscule (Dupont, Saint-Malo), tout_en_majuscules (DUPONT), tout_en_minuscules (dupont), ou vide pour ne changer que les espaces.\n" +
+  "- formater_telephone : harmoniser ou mettre au format 06 12 34 56 78 une colonne de numéros de téléphone (tel, numéros, portables). Champ : colonne.\n" +
   "- supprimer_doublons : supprimer les lignes en double selon une colonne. Champ : colonne.\n" +
   "- tableau_croise : regrouper par une colonne et calculer sur une autre. Champs : colonne (regroupement), colonne_valeurs, operation (somme, moyenne, ou nombre pour compter des lignes).\n" +
-  "- graphique : graphique d'une colonne de valeurs par catégorie. Champs : colonne (catégories), colonne_valeurs, type_graphique, operation.\n" +
-  "- trier : trier le tableau. Champs : colonne, ordre. decroissant = du plus grand au plus petit, de Z à A, du plus récent au plus ancien. croissant = l'inverse.\n" +
+  "- graphique : graphique d'une colonne de valeurs par catégorie. Champs : colonne (catégories), colonne_valeurs, type_graphique (camembert = graphique circulaire), operation.\n" +
+  "- trier : trier le tableau. Champs : colonne, ordre. decroissant = du plus grand au plus petit, de Z à A, du plus récent au plus ancien. croissant = du plus petit au plus grand, de A à Z, les plus anciens d'abord.\n" +
   "- aucune : la demande ne porte pas sur une de ces actions (envoyer un mail, traduire, rédiger, calculer autre chose, etc.).\n" +
   "Laisse vide (\"\") tout champ inutile pour l'action choisie.";
 
 const CAS = [
-  ["Uniformise la colonne Ville avec une majuscule au début et sans espaces", { action: "normaliser_texte", colonne: "Ville", casse: "nom_propre" }],
+  ["Uniformise la colonne Ville avec une majuscule au début et sans espaces", { action: "normaliser_texte", colonne: "Ville", casse: "premiere_lettre_majuscule" }],
   ["les villes sont écrites n'importe comment, corrige", { action: "normaliser_texte", colonne: "Ville" }],
-  ["mets tous les noms en majuscules", { action: "normaliser_texte", colonne: "Nom", casse: "majuscules" }],
-  ["passe les emails en minuscules", { action: "normaliser_texte", colonne: "Email", casse: "minuscules" }],
+  ["mets tous les noms en majuscules", { action: "normaliser_texte", colonne: "Nom", casse: "tout_en_majuscules" }],
+  ["passe les emails en minuscules", { action: "normaliser_texte", colonne: "Email", casse: "tout_en_minuscules" }],
   ["Mets les téléphones au format 06 12 34 56 78", { action: "formater_telephone", colonne: "Téléphone" }],
   ["les numéros de tel sont pas tous pareils, harmonise", { action: "formater_telephone", colonne: "Téléphone" }],
   ["Supprime les doublons en te basant sur l'email", { action: "supprimer_doublons", colonne: "Email" }],

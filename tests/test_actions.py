@@ -58,14 +58,14 @@ def main():
     check(n0 == 305, "305 lignes au départ (%d)" % n0)
 
     # annulation : une action = un seul Ctrl+Z
-    run({"action": "normaliser_texte", "colonne": "Ville", "casse": "nom_propre"})
+    run({"action": "normaliser_texte", "colonne": "Ville", "casse": "premiere_lettre_majuscule"})
     um = doc.getUndoManager()
     check(um.isUndoPossible(), "annulation possible après une action")
     um.undo()
     villes = actions.Table(sheet).column("Ville")
     check(any(v != v.strip() or v.isupper() for v in villes), "Ctrl+Z restaure les villes d'origine")
 
-    run({"action": "normaliser_texte", "colonne": "Ville", "casse": "nom_propre"})
+    run({"action": "normaliser_texte", "colonne": "Ville", "casse": "premiere_lettre_majuscule"})
     villes = set(actions.Table(sheet).column("Ville"))
     check(villes == set(EXPECTED_TOTALS), "8 villes propres : %s" % sorted(villes))
 
