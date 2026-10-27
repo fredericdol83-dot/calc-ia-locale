@@ -1,6 +1,6 @@
 # Version 0.4.2
 
-Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 24.2). Non testée sur Mac.
+Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 24.2). Non testée sur Mac. Fonctionnement hors connexion vérifié sur Windows (Wi-Fi coupé).
 
 ## Correctifs 0.4.1 et 0.4.2
 - Indicateur « 100 % local » raccourci pour ne plus être tronqué (détail en info-bulle), avertissement d’harmonisation affiché en entier.
