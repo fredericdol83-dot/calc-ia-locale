@@ -69,10 +69,12 @@ Le dossier `exemples/` contient `contacts-fictifs.ods`, un fichier de 305 contac
 
 ## Confidentialité et sécurité
 
-- L'extension ne parle qu'à Ollama, à l'adresse `http://localhost:11434`, c'est-à-dire votre propre ordinateur. Aucune autre connexion.
-- Le modèle reçoit les noms de colonnes et votre demande, rien d'autre. Un test automatique le vérifie (`tests/test_bout_en_bout.py`).
+- L'extension ne parle qu'à Ollama sur votre ordinateur, et refuse toute autre adresse. Elle n'utilise ni proxy ni redirection.
+- Le modèle ne reçoit que les noms des colonnes et votre demande, jamais le contenu des cellules. Un test automatique le vérifie.
 - Rien n'est modifié sans votre clic sur Appliquer, et chaque action s'annule d'un clic.
-- « 100 % local » ne veut pas dire « 100 % sûr ». Votre ordinateur reste exposé aux risques habituels (vol, virus, absence de sauvegarde). Le seul engagement ici est qu'aucune donnée ne quitte votre poste à cause de l'extension.
+- Aucun programme lancé, aucun droit administrateur, aucun suivi.
+
+Le détail, et la manière de tout vérifier vous-même, est dans [SECURITE.md](SECURITE.md).
 
 ## Limites connues
 

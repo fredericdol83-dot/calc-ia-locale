@@ -62,7 +62,7 @@ def main():
     label = lambda n: p.c[n].getModel().Label
 
     t.check(p.state == "main", "panneau prêt quand Ollama et le modèle sont là")
-    t.check(label("etat") == "● 100 % local", "indicateur « 100 % local »")
+    t.check(label("etat").startswith("● 100 % local"), "indicateur « 100 % local »")
     t.check(len(p.ideas) == 5 and "Ville" in label("idee0") and label("idee0_d"), "5 idées adaptées au tableau, titre et détail séparés")
     t.check(label("cap_p").startswith("Pas encore"), "le panneau dit ce qu'il ne sait pas faire")
     print("  " + label("table"))
@@ -96,6 +96,12 @@ def main():
     t.check(p.state == "setup" and "modèle" in label("setup_t"), "modèle absent : écran d'installation")
     p.on_dl()
     t.check(p.state == "main", "téléchargement du modèle depuis le panneau, puis accueil")
+
+    p.cfg["url"] = "http://exemple-distant.fr:11434"
+    p.check_setup()
+    t.check(p.state == "setup" and "Par sécurité" in p.c["setup_txt"].getModel().Label,
+            "adresse non locale refusée par défaut")
+    t.check(label("etat").startswith("● Adresse non locale"), "indicateur rouge si l'adresse n'est pas locale")
 
     cfg["url"] = "http://localhost:1"
     p.cfg["url"] = "http://localhost:1"

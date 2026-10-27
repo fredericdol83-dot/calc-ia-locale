@@ -5,11 +5,38 @@ l'adresse par défaut est http://localhost:11434.
 Le modèle ne reçoit que les NOMS des colonnes et la demande, jamais le contenu
 des cellules. Il répond par un JSON contraint (liste fermée d'actions)."""
 import json
-import urllib.request
 import urllib.error
+import urllib.parse
+import urllib.request
+
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None  # aucune redirection : on ne parle qu'à l'adresse configurée
+
+
+# Sans proxy (même si Windows en déclare un) et sans redirection :
+# les échanges restent entre LibreOffice et Ollama, sur cet ordinateur.
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+
+
+def is_local(url):
+    return (urllib.parse.urlparse(url).hostname or "") in LOCAL_HOSTS
+
+
+def _check_url(url, allow_remote=False):
+    if not is_local(url) and not allow_remote:
+        raise LLMError("Par sécurité, l'extension ne communique qu'avec Ollama sur cet ordinateur "
+                       "(localhost). L'adresse configurée (%s) n'est pas locale." % url)
 
 ACTIONS = ["normaliser_texte", "formater_telephone", "supprimer_doublons",
            "tableau_croise", "graphique", "trier", "aucune"]
+
+
+class LLMError(Exception):
+    pass
 
 
 def schema(headers):
@@ -54,27 +81,24 @@ def system_prompt(headers):
     )
 
 
-class LLMError(Exception):
-    pass
-
-
 def _post(url, payload, timeout):
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"),
                                  headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
+    with _OPENER.open(req, timeout=timeout) as r:
         return json.loads(r.read().decode("utf-8"))
 
 
-def installed_models(base_url, timeout=5):
+def installed_models(base_url, timeout=5, allow_remote=False):
+    _check_url(base_url, allow_remote)
     try:
-        with urllib.request.urlopen(base_url.rstrip("/") + "/api/tags", timeout=timeout) as r:
+        with _OPENER.open(base_url.rstrip("/") + "/api/tags", timeout=timeout) as r:
             return [m["name"] for m in json.loads(r.read().decode("utf-8")).get("models", [])]
     except Exception:
         raise LLMError("Ollama ne répond pas sur %s.\nLancez Ollama (menu Démarrer), puis réessayez." % base_url)
 
 
-def choose_action(base_url, model, headers, demande, timeout=180):
-    models = installed_models(base_url)
+def choose_action(base_url, model, headers, demande, timeout=180, allow_remote=False):
+    models = installed_models(base_url, allow_remote=allow_remote)
     if model not in models and model + ":latest" not in models:
         raise LLMError("Le modèle « %s » n'est pas installé.\nDans un terminal, tapez : ollama pull %s"
                        % (model, model))
@@ -104,13 +128,15 @@ def choose_action(base_url, model, headers, demande, timeout=180):
         raise LLMError("Réponse du modèle illisible. Reformulez votre demande.")
 
 
-def pull_model(base_url, model, progress=None, timeout=3600):
-    """Télécharge un modèle via Ollama. progress(texte, fraction ou None) est appelé au fil de l'eau."""
+def pull_model(base_url, model, progress=None, timeout=3600, allow_remote=False):
+    """Demande à Ollama de télécharger un modèle depuis sa bibliothèque officielle.
+    progress(texte, fraction ou None) est appelé au fil de l'eau."""
+    _check_url(base_url, allow_remote)
     req = urllib.request.Request(base_url.rstrip("/") + "/api/pull",
                                  data=json.dumps({"model": model, "stream": True}).encode("utf-8"),
                                  headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _OPENER.open(req, timeout=timeout) as r:
             for line in r:
                 if not line.strip():
                     continue

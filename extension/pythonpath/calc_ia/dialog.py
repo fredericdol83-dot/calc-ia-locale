@@ -170,7 +170,8 @@ class Assistant(unohelper.Base, XActionListener):
     def _check_ollama(self):
         lab = self.model.getByName("connexion")
         try:
-            models = llm.installed_models(self.cfg["url"], timeout=2)
+            models = llm.installed_models(self.cfg["url"], timeout=2,
+                                          allow_remote=self.cfg.get("serveur_distant_autorise", False))
         except llm.LLMError:
             lab.Label = "● Ollama non détecté, lancez-le"
             lab.TextColor = RED
@@ -265,7 +266,8 @@ class Assistant(unohelper.Base, XActionListener):
         self._show("Proposition", "")
         self._status("Le modèle local réfléchit…")
         try:
-            choice = llm.choose_action(self.cfg["url"], modele, table.headers, demande)
+            choice = llm.choose_action(self.cfg["url"], modele, table.headers, demande,
+                                       allow_remote=self.cfg.get("serveur_distant_autorise", False))
             plan = actions.prepare(self.doc, sheet, choice)
         except (llm.LLMError, actions.ActionError) as e:
             self._status("")

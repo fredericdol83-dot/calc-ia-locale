@@ -237,9 +237,18 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
 
     def check_setup(self):
         model = self.c["modele"].getText().strip() or DEFAULTS["model"]
+        remote = self.cfg.get("serveur_distant_autorise", False)
         try:
-            models = llm.installed_models(self.cfg["url"], timeout=2)
-        except llm.LLMError:
+            models = llm.installed_models(self.cfg["url"], timeout=2, allow_remote=remote)
+        except llm.LLMError as e:
+            if not llm.is_local(self.cfg["url"]):
+                self.state = "setup"
+                self._set("etat", "● Adresse non locale refusée")
+                self.c["etat"].getModel().TextColor = RED
+                self._set("setup_t", "Connexion refusée par sécurité")
+                self._set("setup_txt", str(e))
+                self.layout()
+                return
             self.state = "setup"
             self._set("etat", "● Ollama absent")
             self.c["etat"].getModel().TextColor = RED
@@ -263,8 +272,12 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             self.c["btn_dl"].getModel().Enabled = True
             self.layout()
             return
-        self._set("etat", "● 100 % local")
-        self.c["etat"].getModel().TextColor = TEAL
+        if llm.is_local(self.cfg["url"]):
+            self._set("etat", "● 100 % local, rien ne sort de ce PC")
+            self.c["etat"].getModel().TextColor = TEAL
+        else:
+            self._set("etat", "● Attention : modèle sur un autre ordinateur (%s)" % self.cfg["url"])
+            self.c["etat"].getModel().TextColor = RED
         self.state = "main"
         self.refresh_ideas()
 
@@ -361,7 +374,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         t0 = time.time()
         try:
             table = actions.Table(sheet)
-            choice = llm.choose_action(self.cfg["url"], modele, table.headers, demande)
+            choice = llm.choose_action(self.cfg["url"], modele, table.headers, demande,
+                                       allow_remote=self.cfg.get("serveur_distant_autorise", False))
             plan = actions.prepare(self._doc(), sheet, choice)
         except (llm.LLMError, actions.ActionError) as e:
             self._busy("")
@@ -438,7 +452,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         def progress(status, frac):
             self._busy("Téléchargement : %d %%" % int(frac * 100) if frac is not None else status)
         try:
-            llm.pull_model(self.cfg["url"], model, progress)
+            llm.pull_model(self.cfg["url"], model, progress,
+                           allow_remote=self.cfg.get("serveur_distant_autorise", False))
         except llm.LLMError as e:
             self._busy(str(e))
             self.c["btn_dl"].getModel().Enabled = True
