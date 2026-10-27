@@ -109,6 +109,29 @@ def main():
     check(any(i["choice"]["action"] == "supprimer_doublons" for i in ideas), "anglais : doublons d'email repérés")
     doc.close(True)
 
+    doc, s = open_copy(d, "realiste.ods")
+    tb = actions.Table(s)
+    check(tb.headers == ["Client", "Ville", "Email", "HT", "TTC"], "réaliste : en-têtes sous un titre fusionné (%s)" % tb.headers)
+    ideas = show("réaliste", s)
+    p = actions.prepare(doc, s, {"action": "normaliser_texte", "colonne": "Ville", "casse": ""})
+    check(any("formule" in x for x in p.details), "réaliste : l'aperçu signale la formule qui ne sera pas modifiée")
+    p.apply(doc)
+    check(s.getCellByPosition(1, 5).getFormula().startswith("="), "réaliste : la formule de la colonne Ville est intacte")
+    p = actions.prepare(doc, s, {"action": "supprimer_doublons", "colonne": "Email"})
+    p.apply(doc)
+    check(len([r for r in actions.Table(s).rows if r[2] != ""]) == 30, "réaliste : 30 clients après dédoublonnage")
+    check(s.getCellByPosition(7, 3).getString() == "note 0" and s.getCellByPosition(7, 42).getString() == "note 39",
+          "réaliste : le second tableau à droite n'a pas bougé")
+    ttc = s.getCellByPosition(4, 3)
+    check(ttc.getFormula().startswith("=D") and abs(ttc.getValue() - s.getCellByPosition(3, 3).getValue() * 1.2) < 1e-6,
+          "réaliste : les formules TTC restent justes après suppression")
+    try:
+        actions.prepare(doc, doc.Sheets.getByName("Protégée"), {"action": "trier", "colonne": "Ville", "ordre": ""})
+        check(False, "réaliste : feuille protégée refusée")
+    except actions.ActionError as e:
+        check("protégée" in str(e), "réaliste : feuille protégée refusée proprement")
+    doc.close(True)
+
     print("\n%s" % ("TOUS LES TESTS PASSENT" if not check.failed else "%d échec(s)" % check.failed))
     sys.exit(1 if check.failed else 0)
 

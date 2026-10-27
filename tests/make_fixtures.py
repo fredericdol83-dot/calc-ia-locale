@@ -102,6 +102,28 @@ def main():
     put(s, 0, 0, rows)
     save(doc, "sans-titre.ods")
 
+    # 7. Fichier réaliste : titre fusionné, formules, second tableau à droite, filtre, feuille protégée
+    doc = new_doc(d); s = doc.Sheets.getByIndex(0)
+    put(s, 0, 0, [["Suivi des commandes"]])
+    s.getCellRangeByName("A1:E1").merge(True)
+    rows = [["Client", "Ville", "Email", "HT", "TTC"]]
+    for i in range(40):
+        v = random.choice(["Lyon", "LYON", "Lille", " lille "])
+        rows.append(["Client %d" % (i % 30), v, "c%d@exemple.fr" % (i % 30), random.randint(50, 900), None])
+    put(s, 0, 2, rows)
+    for r in range(3, 43):
+        s.getCellByPosition(4, r).setFormula("=D%d*1.2" % (r + 1))   # TTC calculé
+    s.getCellByPosition(1, 5).setFormula('=PROPER("lyon")')          # une ville calculée par formule
+    put(s, 7, 2, [["Notes", "Valeur"]] + [["note %d" % i, i] for i in range(40)])  # second tableau à droite
+    rng = s.getCellRangeByName("A3:E43")
+    fd = rng.createFilterDescriptor(True)
+    rng.filter(fd)  # filtre automatique vide sur l'en-tête
+    doc.Sheets.insertNewByName("Protégée", 1)
+    p2 = doc.Sheets.getByName("Protégée")
+    put(p2, 0, 0, [["Ville", "Montant"], ["Lyon", 1], ["LYON", 2]])
+    p2.protect("")
+    save(doc, "realiste.ods")
+
     # 6. En-têtes en anglais
     doc = new_doc(d); s = doc.Sheets.getByIndex(0)
     rows = [["Customer", "Email", "City", "Amount"]]

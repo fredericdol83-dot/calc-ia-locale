@@ -56,8 +56,17 @@ class Table:
                 h = k
                 break
         head = data[h]
+        body = data[h + 1:]
         cols = [i for i, v in enumerate(head) if v != ""] or [0]
-        first, last = cols[0], cols[-1]
+        first = last = cols[0]
+        # on s'étend vers la droite tant que la colonne a un titre ou des données ;
+        # une colonne vide sépare ce tableau d'un éventuel autre tableau posé à côté
+        for i in range(first + 1, len(head)):
+            filled_below = sum(1 for r in body if r[i] != "")
+            if head[i] != "" or (body and filled_below >= 0.5 * len(body)):
+                last = i
+            else:
+                break
         self.c0, self.c1, self.r0, self.r1 = c0 + first, c0 + last, r0 + h, r1
         self.range = sheet.getCellRangeByPosition(self.c0, self.r0, self.c1, self.r1)
         self.headers = []
@@ -126,10 +135,24 @@ def _fmt_num(v):
     return "{:,}".format(v).replace(",", " ")
 
 
-def _write_column(table, i, values):
+def _formula_rows(table, i):
+    """Lignes (index dans table.rows) dont la cellule contient une formule : on n'y touche jamais."""
+    if table.r1 <= table.r0:
+        return set()
     col = table.c0 + i
-    rng = table.sheet.getCellRangeByPosition(col, table.r0 + 1, col, table.r1)
-    rng.setDataArray(tuple((v,) for v in values))
+    f = table.sheet.getCellRangeByPosition(col, table.r0 + 1, col, table.r1).getFormulaArray()
+    return {n for n, (v,) in enumerate(f) if isinstance(v, str) and v.startswith("=")}
+
+
+def _write_changes(table, i, changes):
+    """N'écrit que les cellules qui changent (jamais les formules, jamais les autres colonnes)."""
+    col = table.c0 + i
+    for n, value in changes:
+        table.sheet.getCellByPosition(col, table.r0 + 1 + n).setString(value)
+
+
+def _formula_note(n):
+    return ("%d cellule(s) contenant une formule ne seront pas modifiées." % n) if n else None
 
 
 def _examples(pairs, n=3):
@@ -173,19 +196,22 @@ def prepare_normaliser_texte(table, colonne, casse=""):
     if fn is None:
         majority = _majority_map(old)
         fn = lambda t: majority.get(t.lower(), t)
-    new, pairs = [], []
-    for v in old:
-        if isinstance(v, str) and v:
-            n = fn(re.sub(r"\s+", " ", v.strip()))
-            if n != v:
-                pairs.append((v, n))
-            new.append(n)
-        else:
-            new.append(v)
+    formulas = _formula_rows(table, i)
+    changes, pairs = [], []
+    for row, v in enumerate(old):
+        if row in formulas or not (isinstance(v, str) and v):
+            continue
+        n = fn(re.sub(r"\s+", " ", v.strip()))
+        if n != v:
+            pairs.append((v, n))
+            changes.append((row, n))
     title = "Harmoniser l'écriture de la colonne %s (espaces superflus retirés, %s)" % (colonne, label)
     details = ["%d cellule(s) sur %d seront modifiées." % (len(pairs), len(old))]
     details += _examples(pairs)
-    return Plan(title, details, lambda: _write_column(table, i, new), len(pairs))
+    note = _formula_note(len(formulas))
+    if note:
+        details.append(note)
+    return Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
 
 # ---------------------------------------------------------------------------
 # 2. Formater des téléphones français
@@ -210,26 +236,27 @@ def _phone(v):
 def prepare_formater_telephone(table, colonne):
     i = table.idx(colonne)
     old = table.column(colonne)
-    new, pairs, unknown = [], [], []
-    for v in old:
-        if v == "":
-            new.append(v)
+    formulas = _formula_rows(table, i)
+    changes, pairs, unknown = [], [], []
+    for row, v in enumerate(old):
+        if v == "" or row in formulas:
             continue
         p = _phone(v)
         if p is None:
             unknown.append(v)
-            new.append(v)
-        else:
-            if p != v:
-                pairs.append((v if not isinstance(v, float) else _fmt_num(v), p))
-            new.append(p)
+        elif p != v:
+            pairs.append((v if not isinstance(v, float) else _fmt_num(v), p))
+            changes.append((row, p))
     title = "Mettre la colonne %s au format 06 12 34 56 78" % colonne
     details = ["%d numéro(s) sur %d seront reformatés." % (len(pairs), len(old))]
     details += _examples(pairs)
     if unknown:
         details.append("%d valeur(s) non reconnue(s) resteront telles quelles, par exemple « %s »."
                        % (len(unknown), unknown[0]))
-    return Plan(title, details, lambda: _write_column(table, i, new), len(pairs))
+    note = _formula_note(len(formulas))
+    if note:
+        details.append(note)
+    return Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
 
 # ---------------------------------------------------------------------------
 # 3. Supprimer les doublons
@@ -254,17 +281,22 @@ def prepare_supprimer_doublons(table, colonne):
             seen[k] = n
 
     def apply():
-        rows = table.sheet.getRows()
-        # suppression du bas vers le haut, par blocs contigus
+        # suppression du bas vers le haut, par blocs contigus, DANS LES COLONNES DU TABLEAU SEULEMENT :
+        # les cellules en dessous remontent, celles à gauche et à droite du tableau ne bougent pas
+        up = uno.Enum("com.sun.star.sheet.CellDeleteMode", "UP")
+        sheet_index = table.range.getRangeAddress().Sheet
         abs_rows = [table.r0 + 1 + n for n in dup]
         for start, count in reversed(_blocks(abs_rows)):
-            rows.removeByIndex(start, count)
+            addr = uno.createUnoStruct("com.sun.star.table.CellRangeAddress")
+            addr.Sheet, addr.StartColumn, addr.EndColumn = sheet_index, table.c0, table.c1
+            addr.StartRow, addr.EndRow = start, start + count - 1
+            table.sheet.removeRange(addr, up)
 
     title = "Supprimer les lignes en double selon la colonne %s" % colonne
     details = ["%d ligne(s) en double seront supprimées, %d resteront."
                % (len(dup), len(table.rows) - len(dup)),
                "Deux valeurs identiques aux majuscules et aux espaces près comptent comme un doublon.",
-               "La première occurrence est conservée."]
+               "La première occurrence est conservée. Les données à côté du tableau ne bougent pas."]
     if dup:
         ex = table.rows[dup[0]][i]
         details.append("  Exemple de doublon : « %s » (ligne %d)" % (ex, table.r0 + dup[0] + 2))
@@ -548,6 +580,9 @@ def prepare_trier(table, colonne, ordre=""):
 
 def prepare(doc, sheet, choice):
     """choice : dictionnaire renvoyé par le modèle (action + paramètres)."""
+    if sheet.isProtected():
+        raise ActionError("Cette feuille est protégée : je ne la modifie pas. Retirez la protection "
+                          "(Outils > Protéger la feuille) si vous voulez continuer.")
     table = Table(sheet)
     if not table.rows:
         raise ActionError("La feuille active ne contient pas de tableau (il faut une ligne d'en-têtes et des données).")
