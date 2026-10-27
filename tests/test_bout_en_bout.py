@@ -16,6 +16,8 @@ REPONSES = {
     "nettoie les villes": {"action": "normaliser_texte", "colonne": "Ville", "casse": "premiere_lettre_majuscule"},
     "doublons email": {"action": "supprimer_doublons", "colonne": "Email"},
     "envoie un mail": {"action": "aucune", "colonne": ""},
+    "total des devis par ville": {"action": "tableau_croise", "colonne": "Ville",
+                                  "colonne_valeurs": "Montant devis (€)", "operation": "somme"},
 }
 RECU = []
 
@@ -66,6 +68,10 @@ def main():
     print(out, "\n")
     t.check("76 cellule(s)" in out, "aperçu du nettoyage affiché")
     t.check(a.model.getByName("appliquer").Enabled, "bouton Appliquer activé après proposition")
+    t.check(a.model.getByName("connexion").Label.startswith("● Ollama connecté"), "indicateur de connexion locale affiché")
+    t.check("qwen3:4b" in a.model.getByName("modele").StringItemList, "liste déroulante des modèles installés")
+    a.on_raccourci(2)
+    t.check(a.dlg.getControl("demande").getText().startswith("supprime les doublons"), "raccourci qui pré-remplit la demande")
     villes_avant = set(dialog.actions.Table(doc.Sheets.getByIndex(0)).column("Ville"))
     t.check(len(villes_avant) > 8, "rien n'est modifié avant de cliquer sur Appliquer")
     a.on_appliquer()
@@ -77,6 +83,19 @@ def main():
     a.on_appliquer()
     n = len(dialog.actions.Table(doc.Sheets.getByIndex(0)).rows)
     t.check(n == 201, "201 contacts après dédoublonnage via la fenêtre")
+
+    ask("total des devis par ville")
+    a.on_appliquer()
+    t.check(doc.Sheets.hasByName("TCD Ville"), "tableau croisé créé dans une nouvelle feuille")
+    a.on_annuler()
+    t.check(not doc.Sheets.hasByName("TCD Ville"), "le bouton Annuler retire la feuille du tableau croisé")
+    ask("total des devis par ville")
+    a.on_appliquer()
+    doc.getCurrentController().setActiveSheet(doc.Sheets.getByName("TCD Ville"))
+    out = ask("doublons email")
+    t.check("Feuille : Sheet1" in out, "après un TCD, la demande suivante repart sur la feuille de données")
+    a.on_annuler() if a.model.getByName("annuler").Enabled else None
+    a.plan = None
 
     out = ask("envoie un mail")
     print(out, "\n")

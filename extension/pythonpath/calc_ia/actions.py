@@ -352,6 +352,7 @@ def prepare_tableau_croise(doc, table, colonne, colonne_valeurs="", operation=""
         sheet, _ = _insert_pivot(doc, table, colonne, colonne_valeurs, operation,
                                  "TCD %s" % colonne)
         _activate(doc, sheet)
+        return sheet.getName()
 
     return Plan(title, details, apply, len(agg))
 
@@ -394,6 +395,7 @@ def prepare_graphique(doc, table, colonne, colonne_valeurs="", type_graphique=""
         except Exception:
             pass
         _activate(doc, sheet)
+        return sheet.getName()
 
     return Plan(title, details, apply, len(agg))
 

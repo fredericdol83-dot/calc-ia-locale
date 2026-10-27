@@ -42,5 +42,20 @@
         </node>
       </node>
     </node>
+    <node oor:name="Images">
+      <node oor:name="fr.fredericdol.calcialocale.image" oor:op="replace">
+        <prop oor:name="URL" oor:type="xs:string">
+          <value>service:fr.fredericdol.calcialocale.Launcher?open</value>
+        </prop>
+        <node oor:name="UserDefinedImages">
+          <prop oor:name="ImageSmallURL" oor:type="xs:string">
+            <value>%origin%/icons/icon16.png</value>
+          </prop>
+          <prop oor:name="ImageBigURL" oor:type="xs:string">
+            <value>%origin%/icons/icon26.png</value>
+          </prop>
+        </node>
+      </node>
+    </node>
   </node>
 </oor:component-data>

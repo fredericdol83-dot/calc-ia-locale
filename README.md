@@ -17,7 +17,7 @@ L'idée est simple. Un logiciel libre (LibreOffice), un modèle d'IA ouvert qui 
 1. Vous écrivez votre demande dans la fenêtre de l'assistant.
 2. Le modèle local reçoit uniquement les noms des colonnes et votre phrase, jamais le contenu des cellules. Il choisit une action dans une liste fermée, avec ses paramètres.
 3. L'extension calcule elle-même ce qui va changer et vous montre un aperçu (nombre de cellules, exemples avant/après, avertissements).
-4. Vous cliquez sur **Appliquer**, ou pas. Ctrl+Z annule l'action en une fois.
+4. Vous cliquez sur Appliquer, ou pas. Le bouton « Annuler la dernière action » revient en arrière, y compris pour un tableau croisé ou un graphique (la feuille créée est retirée).
 
 Le modèle ne touche jamais aux cellules. C'est ce choix qui rend l'outil rapide (quelques secondes) et fiable avec un petit modèle, là où les assistants « qui font tout » échouent sur un ordinateur ordinaire.
 
@@ -71,7 +71,7 @@ Le dossier `exemples/` contient `contacts-fictifs.ods`, un fichier de 305 contac
 
 - L'extension ne parle qu'à Ollama, à l'adresse `http://localhost:11434`, c'est-à-dire votre propre ordinateur. Aucune autre connexion.
 - Le modèle reçoit les noms de colonnes et votre demande, rien d'autre. Un test automatique le vérifie (`tests/test_bout_en_bout.py`).
-- Rien n'est modifié sans votre clic sur Appliquer, et chaque action s'annule avec Ctrl+Z.
+- Rien n'est modifié sans votre clic sur Appliquer, et chaque action s'annule d'un clic.
 - « 100 % local » ne veut pas dire « 100 % sûr ». Votre ordinateur reste exposé aux risques habituels (vol, virus, absence de sauvegarde). Le seul engagement ici est qu'aucune donnée ne quitte votre poste à cause de l'extension.
 
 ## Limites connues
