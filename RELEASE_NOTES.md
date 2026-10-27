@@ -3,7 +3,7 @@
 Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 24.2). Non testée sur Mac.
 
 ## Correctifs 0.4.1 et 0.4.2
-- Indicateur « 100 % local » raccourci pour ne plus être tronqué (détail en info-bulle).
+- Indicateur « 100 % local » raccourci pour ne plus être tronqué (détail en info-bulle), avertissement d’harmonisation affiché en entier.
 - Aide « Comment ça marche ? » : bouton Retour placé en haut, et un second clic sur l'aide la referme. On ne peut plus rester bloqué sur cet écran.
 
 ## Nouveautés de la 0.4
@@ -16,6 +16,6 @@ Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 
 
 ## Vérifier le fichier
 SHA-256 de calc-ia-locale.oxt :
-5544cf3a7908e891c3257a71ad423adc8b1f112413fe1815923ca7ae02ba94dd
+bccd23d8664d12c5037eae8eb16fd43ad69a19d644a4f78790ba3b8e4bd35964
 
 Sous Windows : certutil -hashfile calc-ia-locale.oxt SHA256

@@ -205,7 +205,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
                 rows.append(full("compris", 20))
             rows += [full("details", 84), (None, 3)]
             if self.plan is not None and self.plan.prereq:
-                rows += [full("prereq_t", 22), full("btn_prereq", 16), (None, 4)]
+                rows += [full("prereq_t", 32), full("btn_prereq", 16), (None, 4)]
             if self.plan is not None and self.plan.risk:
                 rows += [full("risk", 12), full("btn_copie", 16)]
                 if self.c["copie_ok"].getModel().Label:
