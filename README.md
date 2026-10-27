@@ -10,6 +10,10 @@ Logiciel libre, modèle d'IA ouvert, aucune donnée envoyée sur Internet, et to
 
 Les assistants d'IA intégrés aux tableurs envoient le contenu de vos tableaux sur des serveurs distants. Pour un fichier clients, RH ou comptable, ce n'est pas anodin. L'idée ici est de garder les données sur le poste, avec des outils libres, et de laisser à l'humain la décision finale.
 
+## D'où vient ce projet
+
+Un projet personnel, né d'une question simple. Mon ordinateur portable n'a ni carte graphique ni beaucoup de mémoire. Comment utiliser l'IA dans un tableur sans envoyer mes données sur Internet ? Je l'ai développé sur mon temps libre, avec l'aide de Claude, sans aucun code ni information venant d'un employeur. Il s'adresse d'abord aux particuliers, et à toute personne qui travaille sur un PC ordinaire.
+
 ## Comment ça marche, en clair
 
 1. Le panneau, à droite du tableau, analyse vos colonnes et propose des idées : une colonne mal écrite à harmoniser, des téléphones à mettre au même format, des doublons, un total ou un graphique utile. Ces idées sont calculées par l'extension elle-même, sans IA.
@@ -67,6 +71,17 @@ Sur un PC portable ordinaire (16 Go de RAM, sans carte graphique), un assistant 
 | granite3.3:2b | 16/20 | 4,4 s | 2,0 Go | Apache 2.0 |
 
 Ces chiffres sont indicatifs : 20 demandes rédigées par nous, qui ont aussi servi à régler la consigne. Le script `tests/benchmark_modeles.mjs` permet de refaire la mesure chez vous. Le moteur d'actions est par ailleurs testé automatiquement sur huit tableaux différents (titres au-dessus du tableau, vraies dates, codes article, formules, second tableau à côté, 5 000 lignes, en-têtes en anglais).
+
+## Projets voisins
+
+D'autres extensions libres apportent l'IA à LibreOffice, avec d'autres choix. Selon votre besoin et votre machine, l'une d'elles vous conviendra peut-être mieux.
+
+- [WriterAgent](https://github.com/keithcu/writeragent) : assistant complet pour Writer et Calc, qui peut piloter le document.
+- [localwriter](https://github.com/balisujohn/localwriter) : extension pour Writer et Calc, compatible avec les serveurs d'IA locaux ou distants.
+- [AssistantMiraiLibreOffice](https://github.com/IA-Generative/AssistantMiraiLibreOffice) : dérivé de localwriter, pensé pour un déploiement en organisation avec un serveur d'IA.
+- D'autres encore sur le [site des extensions LibreOffice](https://extensions.libreoffice.org/).
+
+Le parti pris de celle-ci est plus étroit. Tout se passe sur un seul PC, sans connexion. Le modèle ne voit jamais le contenu des cellules. Il choisit parmi six actions, et vous validez chaque changement sur un aperçu.
 
 ## Pour les curieux et les contributeurs
 
