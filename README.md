@@ -1,133 +1,87 @@
 # IA locale pour Calc
 
-Une extension pour LibreOffice Calc qui permet de demander en français « supprime les doublons sur l'email » ou « fais-moi le total des devis par ville », avec une IA qui tourne entièrement sur votre ordinateur.
+Un petit assistant d'IA pour LibreOffice Calc, inspiré de Copilot dans Excel, mais qui fonctionne entièrement sur votre ordinateur. Il repère ce qui peut être amélioré dans votre tableau, comprend des demandes en français comme « supprime les doublons sur l'email » ou « total des devis par ville », et vous montre ce qui va changer avant de le faire.
 
-100 % libre, 100 % local, et toujours sous votre contrôle. L'IA propose, vous voyez l'aperçu, et rien ne change tant que vous n'avez pas cliqué sur Appliquer.
+Logiciel libre, modèle d'IA ouvert, aucune donnée envoyée sur Internet, et toujours sous votre contrôle : l'IA propose, vous validez.
 
-> **C'est une preuve de concept, pas un produit fini.** Elle sert à montrer qu'on peut déjà utiliser l'IA dans un tableur libre sans envoyer ses données sur Internet. Testez-la, réutilisez-la, améliorez-la. Mais travaillez sur une copie de vos fichiers.
+> **Une preuve de concept, pas un produit fini.** Elle montre qu'on peut déjà utiliser l'IA dans un tableur libre en gardant la maîtrise de ses données. Elle a été testée sur Windows et Linux, pas encore sur Mac. Par précaution, travaillez sur une copie de vos fichiers importants.
 
 ## Pourquoi
 
-Les assistants d'IA intégrés aux tableurs (Copilot, ChatGPT, Claude…) envoient le contenu de vos tableaux sur des serveurs distants. Pour un fichier clients, RH ou comptable, ce n'est pas anodin. Et chaque nouvel usage renforce notre dépendance à quelques grands acteurs.
+Les assistants d'IA intégrés aux tableurs envoient le contenu de vos tableaux sur des serveurs distants. Pour un fichier clients, RH ou comptable, ce n'est pas anodin. L'idée ici est de garder les données sur le poste, avec des outils libres, et de laisser à l'humain la décision finale.
 
-L'idée est simple. Un logiciel libre (LibreOffice), un modèle d'IA ouvert qui tourne chez vous (via Ollama), et un fonctionnement qui garde l'humain aux commandes.
+## Comment ça marche, en clair
 
-## Comment ça marche
+1. Le panneau, à droite du tableau, analyse vos colonnes et propose des idées : une colonne mal écrite à harmoniser, des téléphones à mettre au même format, des doublons, un total ou un graphique utile. Ces idées sont calculées par l'extension elle-même, sans IA.
+2. Pour une demande libre, un petit modèle d'IA, installé sur votre PC, lit seulement les noms de vos colonnes et votre phrase. Il choisit une action parmi six, et le panneau vous dit ce qu'il a compris.
+3. L'extension calcule l'aperçu : combien de cellules changent, des exemples avant et après, et les avertissements utiles (colonne mal écrite, formules préservées, lignes supprimées).
+4. Vous appliquez, ou pas. Un bouton annule l'action juste après. Avant une suppression, un bouton enregistre une copie de sauvegarde.
 
-1. Le panneau analyse votre tableau et propose des idées adaptées (colonnes mal écrites, téléphones à harmoniser, doublons, totaux possibles). Vous cliquez sur une idée, ou vous écrivez votre demande en français.
-2. Le modèle local reçoit uniquement les noms des colonnes et votre phrase, jamais le contenu des cellules. Il choisit une action dans une liste fermée, avec ses paramètres.
-3. L'extension calcule elle-même ce qui va changer et vous montre un aperçu (nombre de cellules, exemples avant/après, avertissements).
-4. Vous cliquez sur Appliquer, ou pas. Le bouton « Annuler la dernière action » revient en arrière, y compris pour un tableau croisé ou un graphique (la feuille créée est retirée).
+Le rôle de l'IA est volontairement limité : comprendre votre demande. Tout le reste est fait par un code prévisible et lisible. C'est ce qui rend l'outil rapide (quelques secondes) et fiable avec un petit modèle, sur un ordinateur ordinaire.
 
-Le modèle ne touche jamais aux cellules. C'est ce choix qui rend l'outil rapide (quelques secondes) et fiable avec un petit modèle, là où les assistants « qui font tout » échouent sur un ordinateur ordinaire.
+## Ce qu'il sait faire, et ce qu'il ne fait pas
 
-## Ce qu'il sait faire
-
-| Action | Exemples de demandes |
+| Nettoyer | Analyser |
 |---|---|
-| Nettoyer une colonne de texte | « uniformise les villes », « mets les noms en majuscules », « passe les emails en minuscules » |
-| Formater des téléphones français | « mets les téléphones au format 06 12 34 56 78 » |
-| Supprimer les doublons | « supprime les doublons sur l'email » |
-| Tableau croisé dynamique | « total des devis par ville », « combien de contacts par secteur ? » |
-| Graphique (barres, courbe, camembert) | « un camembert des montants par secteur » |
-| Trier | « trie par montant du plus grand au plus petit » |
+| Harmoniser l'écriture d'une colonne (« Lyon », « LYON », « lyon ») | Tableau croisé dynamique : total, moyenne, nombre |
+| Mettre en majuscules ou en minuscules | Graphique en barres, courbe ou camembert |
+| Formater des téléphones français (06 12 34 56 78) | |
+| Supprimer les doublons | |
+| Trier le tableau | |
 
-Pour toute autre demande (envoyer un mail, traduire, rédiger…), l'assistant répond qu'il ne sait pas faire. C'est voulu.
+Il ne sait pas rédiger ou traduire du texte, écrire des formules, fusionner des fichiers ni envoyer des mails. Il le dit quand une demande sort de son périmètre.
 
 ## Ce qu'il vous faut
 
 - LibreOffice 7.0 ou plus récent ([libreoffice.org](https://fr.libreoffice.org/download/telecharger-libreoffice/)).
-- Ollama, le logiciel qui fait tourner les modèles d'IA en local ([ollama.com](https://ollama.com/download)).
-- Un ordinateur avec 8 Go de RAM au minimum, 16 Go conseillés. Pas besoin de carte graphique.
-- Environ 3 Go d'espace disque pour le modèle.
+- Ollama, le logiciel libre qui fait tourner le modèle sur votre PC ([ollama.com](https://ollama.com/download)).
+- 8 Go de RAM au minimum, 16 Go conseillés. Pas besoin de carte graphique.
+- Environ 3 Go d'espace disque, et une connexion Internet une seule fois, pour télécharger le modèle.
 
-## Installation (environ 10 minutes)
+## Installation en trois étapes (environ 10 minutes, sans terminal)
 
-**1. Installez Ollama**, puis ouvrez un terminal (sous Windows, touche Windows, tapez `cmd`, Entrée) et téléchargez le modèle conseillé :
+1. **Installez Ollama** depuis son site officiel, puis lancez-le (son icône apparaît près de l'horloge).
+2. **Installez l'extension** : téléchargez `calc-ia-locale.oxt` dans la page [Releases](../../releases), double-cliquez dessus, puis fermez et rouvrez LibreOffice.
+3. **Ouvrez un tableau dans Calc** et cliquez sur l'icône « IA » de la barre d'outils (ou menu *IA locale*). Le panneau vérifie l'installation et propose de télécharger le modèle en un clic.
 
-```
-ollama pull qwen3:4b
-```
+Le pas-à-pas illustré, avec les réponses aux questions courantes, est dans le [guide](GUIDE.md).
 
-**2. Téléchargez l'extension** : le fichier `calc-ia-locale.oxt` dans la page [Releases](../../releases) de ce dépôt.
+## Confiance et sécurité
 
-**3. Installez-la dans LibreOffice** : double-cliquez sur le fichier `.oxt`, ou dans LibreOffice ouvrez *Outils > Gestionnaire des extensions > Ajouter*. Fermez complètement LibreOffice, puis rouvrez-le.
+- L'extension ne communique qu'avec Ollama sur votre ordinateur et refuse toute autre adresse, sans proxy ni redirection.
+- Le modèle ne reçoit jamais le contenu des cellules.
+- Les formules ne sont jamais modifiées, les données voisines du tableau ne bougent pas, une feuille protégée n'est pas touchée.
+- Aucun programme lancé, aucun droit administrateur, aucun suivi d'usage.
 
-**4. Ouvrez un tableau dans Calc.** Cliquez sur l'icône « IA » de la barre d'outils, ou sur le menu *IA locale > Ouvrir le panneau IA locale*. Le panneau s'ouvre à droite du tableau, comme Copilot dans Excel. S'il manque Ollama ou le modèle, il vous guide, et le modèle se télécharge directement depuis le panneau.
-
-Sous Linux, il faut parfois installer en plus le paquet `libreoffice-script-provider-python`.
-
-## Premier essai
-
-Le dossier `exemples/` contient `contacts-fictifs.ods`, un fichier de 305 contacts inventés, volontairement mal tenu (doublons, villes mal saisies, téléphones dans quatre formats). Ouvrez-en une copie et essayez dans l'ordre :
-
-1. « uniformise la colonne Ville »
-2. « mets les téléphones au format 06 12 34 56 78 »
-3. « supprime les doublons sur l'email », il doit rester 201 contacts
-4. « total des devis par ville »
-5. « fais un graphique en barres du total des devis par ville »
-
-## Confidentialité et sécurité
-
-- L'extension ne parle qu'à Ollama sur votre ordinateur, et refuse toute autre adresse. Elle n'utilise ni proxy ni redirection.
-- Le modèle ne reçoit que les noms des colonnes et votre demande, jamais le contenu des cellules. Un test automatique le vérifie.
-- Rien n'est modifié sans votre clic sur Appliquer, et chaque action s'annule d'un clic.
-- Aucun programme lancé, aucun droit administrateur, aucun suivi.
-
-Le détail, et la manière de tout vérifier vous-même, est dans [SECURITE.md](SECURITE.md).
-
-## Limites connues
-
-- Six actions seulement. Ce n'est pas un Copilot généraliste.
-- Le tableau doit commencer par une ligne d'en-têtes, et l'assistant travaille sur la feuille active. Après la création d'un tableau croisé ou d'un graphique, revenez sur la feuille de données avant la demande suivante.
-- Le modèle se trompe parfois sur un détail (ordre de tri, majuscules). Lisez toujours l'aperçu avant d'appliquer.
-- Les dates saisies comme du texte se trient par ordre alphabétique, pas chronologique (l'aperçu vous prévient).
-- Les téléphones gérés sont les numéros français à 10 chiffres.
+Tout cela se vérifie : le détail et la méthode sont dans [SECURITE.md](SECURITE.md). Pensez à tenir Ollama à jour, comme tout logiciel installé.
 
 ## Ce que nos tests ont montré
 
-Sur un PC portable ordinaire (16 Go de RAM, processeur AMD, sans carte graphique) :
-
-- Un assistant généraliste existant, piloté par des modèles locaux de 3 à 7 milliards de paramètres, n'a réussi aucune tâche de nettoyage (réflexion sans fin, plan jamais exécuté, ou colonnes écrasées par erreur).
-- Avec l'approche de cette extension (liste fermée d'actions), nous avons comparé neuf petits modèles ouverts sur 20 demandes de test. Les quatre meilleurs :
+Sur un PC portable ordinaire (16 Go de RAM, sans carte graphique), un assistant généraliste existant piloté par des modèles locaux n'a réussi aucune tâche de nettoyage. Avec l'approche de cette extension, nous avons comparé neuf petits modèles ouverts sur 20 demandes de test :
 
 | Modèle | Bonnes réponses | Temps moyen | Mémoire | Licence |
 |---|---|---|---|---|
 | qwen3:4b (par défaut) | 20/20 | 5,8 s | 3,2 Go | Apache 2.0 |
-| qwen2.5:3b | 18/20 | 5,1 s | 2,2 Go | Qwen Research (à vérifier) |
-| qwen3:1.7b | 17/20 | 4,2 s | 1,9 Go | Apache 2.0 |
+| qwen2.5:3b | 18/20 | 5,1 s | 2,2 Go | licence Qwen, à vérifier |
+| qwen3:1.7b (conseillé avec 8 Go) | 17/20 | 4,2 s | 1,9 Go | Apache 2.0 |
 | granite3.3:2b | 16/20 | 4,4 s | 2,0 Go | Apache 2.0 |
 
-Avec 8 Go de RAM, préférez `qwen3:1.7b`, plus léger. Le script `tests/benchmark_modeles.mjs` permet de refaire la comparaison chez vous.
+Ces chiffres sont indicatifs : 20 demandes rédigées par nous, qui ont aussi servi à régler la consigne. Le script `tests/benchmark_modeles.mjs` permet de refaire la mesure chez vous. Le moteur d'actions est par ailleurs testé automatiquement sur huit tableaux différents (titres au-dessus du tableau, vraies dates, codes article, formules, second tableau à côté, 5 000 lignes, en-têtes en anglais).
 
-Ce sont des mesures sur un jeu de 20 demandes, rédigé par nous et ayant servi à mettre au point la consigne. Vos résultats peuvent varier.
-
-## Dépannage
-
-- **« Ollama ne répond pas »** : lancez Ollama depuis le menu Démarrer (son icône apparaît près de l'horloge), puis réessayez.
-- **« Le modèle n'est pas installé »** : tapez `ollama pull qwen3:4b` dans un terminal.
-- **Le menu IA locale n'apparaît pas** : vérifiez dans *Outils > Gestionnaire des extensions* que l'extension est activée, puis redémarrez LibreOffice en entier (y compris le démarrage rapide, s'il est actif).
-- **Changer de modèle** : tapez son nom dans le champ « Modèle » de la fenêtre. Le choix est mémorisé.
-
-## Pour les curieux
+## Pour les curieux et les contributeurs
 
 ```
-extension/            le code de l'extension (Python)
-  pythonpath/calc_ia/
-    llm.py            dialogue avec Ollama (consigne courte, réponse JSON contrainte)
-    actions.py        les six actions, avec aperçu et annulation
-    dialog.py         la fenêtre
-tests/                tests automatiques avec LibreOffice sans interface
-exemples/             fichier de test
-build.py              fabrique dist/calc-ia-locale.oxt
+extension/pythonpath/calc_ia/
+  panel.py     le panneau latéral
+  suggest.py   les idées calculées sans IA
+  llm.py       le seul fichier qui communique (avec Ollama, en local)
+  actions.py   les six actions, avec aperçu, prudence et annulation
+tests/         tests automatiques avec LibreOffice sans interface
+exemples/      fichier d'essai
 ```
 
-Pour lancer les tests : démarrez `soffice --headless --accept="socket,host=localhost,port=2002;urp;"`, puis `python3 tests/test_actions.py` et `python3 tests/test_bout_en_bout.py`.
+Les contributions sont bienvenues : retours sur vos fichiers réels, tests sur Mac, nouvelles actions, autres formats de téléphone.
 
-Les contributions sont bienvenues : nouvelles actions, autres formats de téléphone, traductions.
+## Licence et transparence
 
-## Licence
-
-MIT. Voir le fichier [LICENSE](LICENSE).
-
-Projet de Frédéric Dol, réalisé avec l'aide de Claude.
+Code sous licence MIT. Projet de Frédéric Dol, développé avec l'aide de Claude (Anthropic). L'outil lui-même ne fait appel à aucun service en ligne.

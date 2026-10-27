@@ -23,13 +23,16 @@ Une fois le modèle téléchargé, tout fonctionne sans connexion Internet. Pour
 - **Rien sans votre accord.** Chaque action affiche d'abord un aperçu, et ne s'applique qu'après un clic sur Appliquer. Le bouton « Annuler cette action » revient en arrière.
 - **Aucune commande système.** L'extension n'exécute aucun programme, aucun script téléchargé, et ne demande aucun droit administrateur. Elle n'utilise que la bibliothèque standard de Python fournie avec LibreOffice.
 - **Aucun suivi.** Pas de statistiques d'usage, pas de compte, pas de cookie, pas d'appel vers nos serveurs (nous n'en avons pas).
-- **Un seul fichier écrit.** Le réglage du modèle choisi, dans `.calc-ia-locale.json`, dans votre dossier personnel.
+- **Vos données protégées.** Les cellules contenant une formule ne sont jamais modifiées. La suppression de doublons ne touche que les colonnes du tableau, pas les données posées à côté. Une feuille protégée est refusée.
+- **Prudence avant les actions sensibles.** Toute action qui modifie ou supprime des données est signalée dans l'aperçu, avec un bouton pour enregistrer une copie de sauvegarde datée à côté du fichier.
+- **Fichiers écrits.** Le réglage du modèle choisi, dans `.calc-ia-locale.json` (dossier personnel), et les copies de sauvegarde que vous demandez explicitement.
 
 ## Ce que l'extension ne garantit pas
 
 - Votre ordinateur reste exposé aux risques habituels (vol, virus, absence de sauvegarde). « Local » ne veut pas dire « invulnérable ».
 - Le modèle peut se tromper sur un détail. C'est pour cela que l'aperçu est obligatoire : lisez-le avant d'appliquer, et travaillez sur une copie de vos fichiers importants.
-- Ollama et le modèle sont des logiciels tiers, téléchargés depuis leurs sources officielles. Leur sécurité relève de leurs éditeurs (Ollama, Alibaba pour Qwen3, sous licence Apache 2.0).
+- Ollama et le modèle sont des logiciels tiers, téléchargés depuis leurs sources officielles. Leur sécurité relève de leurs éditeurs (Ollama, Alibaba pour Qwen3, sous licence Apache 2.0). Ollama est un service qui tourne en permanence sur le PC et a déjà connu des failles, corrigées depuis (par exemple CVE-2024-37032 en 2024). Tenez-le à jour.
+- Le fichier `.oxt` n'est pas signé numériquement. Vérifiez son empreinte avec celle publiée dans la release.
 
 ## Vérifier par vous-même
 
