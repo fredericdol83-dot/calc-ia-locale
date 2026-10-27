@@ -38,7 +38,7 @@ Une fois le modèle téléchargé, tout fonctionne sans connexion Internet. Pour
 
 1. **Lire le code.** Tout est dans `extension/pythonpath/calc_ia/`. Les seuls appels réseau sont dans `llm.py`.
 2. **Couper Internet.** L'extension continue de fonctionner une fois le modèle installé.
-3. **Vérifier le fichier téléchargé.** L'empreinte SHA-256 du fichier `.oxt` est publiée avec chaque version. Sous Windows : `certutil -hashfile calc-ia-locale.oxt SHA256`.
+3. **Vérifier le fichier téléchargé.** L'empreinte SHA-256 du fichier `.oxt` est publiée avec chaque version. Sous Windows : `certutil -hashfile calc-ia-locale-0.4.2.oxt SHA256`.
 4. **Ouvrir le fichier .oxt.** C'est une simple archive ZIP. Renommez-la en `.zip` pour voir son contenu.
 
 ## Signaler un problème

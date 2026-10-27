@@ -47,7 +47,7 @@ Il ne sait pas rédiger ou traduire du texte, écrire des formules, fusionner de
 ## Installation en trois étapes (environ 10 minutes, sans terminal)
 
 1. **Installez Ollama** depuis son site officiel, puis lancez-le (son icône apparaît près de l'horloge).
-2. **Installez l'extension** : téléchargez `calc-ia-locale.oxt` dans la page [Releases](../../releases), double-cliquez dessus, puis fermez et rouvrez LibreOffice.
+2. **Installez l'extension** : téléchargez le fichier `.oxt` (par exemple `calc-ia-locale-0.4.2.oxt`) dans la page [Releases](../../releases), double-cliquez dessus, puis fermez et rouvrez LibreOffice.
 3. **Ouvrez un tableau dans Calc** et cliquez sur l'icône « IA » de la barre d'outils (ou menu *IA locale*). Le panneau vérifie l'installation et propose de télécharger le modèle en un clic.
 
 Le pas-à-pas illustré, avec les réponses aux questions courantes, est dans le [guide](GUIDE.md).

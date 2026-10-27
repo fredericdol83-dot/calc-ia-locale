@@ -18,7 +18,7 @@ Ollama tourne ensuite discrètement en arrière-plan. Il n'est accessible que de
 
 ## Étape 2 : installer l'extension
 
-1. Téléchargez le fichier `calc-ia-locale.oxt` dans la page Releases du dépôt GitHub.
+1. Téléchargez le fichier `.oxt` de la dernière version (par exemple `calc-ia-locale-0.4.2.oxt`) dans la page Releases du dépôt GitHub.
 2. Facultatif mais conseillé : vérifiez son empreinte (voir [SECURITE.md](SECURITE.md)).
 3. Double-cliquez sur le fichier. LibreOffice propose de l'installer : acceptez.
 4. Fermez complètement LibreOffice, puis rouvrez-le.

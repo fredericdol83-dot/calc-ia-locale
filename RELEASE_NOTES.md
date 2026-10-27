@@ -15,7 +15,7 @@ Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 
 - Modèle par défaut : qwen3:4b (Apache 2.0).
 
 ## Vérifier le fichier
-SHA-256 de calc-ia-locale.oxt :
+SHA-256 de calc-ia-locale-0.4.2.oxt :
 bccd23d8664d12c5037eae8eb16fd43ad69a19d644a4f78790ba3b8e4bd35964
 
-Sous Windows : certutil -hashfile calc-ia-locale.oxt SHA256
+Sous Windows : certutil -hashfile calc-ia-locale-0.4.2.oxt SHA256
