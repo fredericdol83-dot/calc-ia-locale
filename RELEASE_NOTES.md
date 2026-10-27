@@ -1,8 +1,11 @@
-# Version 0.4.0
+# Version 0.4.1
 
 Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 24.2). Non testée sur Mac.
 
-## Nouveautés
+## Correctif 0.4.1
+- Aide « Comment ça marche ? » : bouton Retour placé en haut, et un second clic sur l'aide la referme. On ne peut plus rester bloqué sur cet écran.
+
+## Nouveautés de la 0.4
 - Panneau latéral inspiré de Copilot : idées calculées sur votre tableau (Nettoyer, Analyser), demande en français, aperçu chiffré, historique.
 - Installation guidée : le panneau vérifie Ollama et télécharge le modèle en un clic.
 - Prudence : actions sensibles signalées, copie de sauvegarde en un clic, harmonisation proposée avant une analyse sur une colonne mal écrite, aide « Comment ça marche ? ».
@@ -12,6 +15,6 @@ Preuve de concept. Testée sur Windows (LibreOffice 26.8) et Linux (LibreOffice 
 
 ## Vérifier le fichier
 SHA-256 de calc-ia-locale.oxt :
-cff422b5343a71e952c3d70472894a2fe2b0dbb90b389657ee775401086a2a06
+67fe06ca9988d09c1556db392a0ee17f4dc73bd4f5cfaf2759bef1e6efd7be77
 
 Sous Windows : certutil -hashfile calc-ia-locale.oxt SHA256

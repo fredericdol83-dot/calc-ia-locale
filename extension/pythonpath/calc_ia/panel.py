@@ -171,7 +171,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         rows = [([("etat", M, W - 2 * M - 82), ("btn_aide", W - M - 80, 80)], 14), (None, 2)]
         s = self.state
         if s == "aide":
-            rows += [full("aide_t", 12), full("aide_txt", 250), ([("btn_retour", M, 60)], 16)]
+            rows += [([("aide_t", M, W - 2 * M - 62), ("btn_retour", W - M - 60, 60)], 16),
+                     full("aide_txt", 250)]
         if s == "main" and not self.cfg.get("accueil_vu"):
             rows += [full("bienvenue", 30), ([("btn_compris", M, 70)], 16), (None, 6)]
         if s == "setup":
@@ -516,12 +517,19 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         self._show_plan(echo, plan, choice=choice, compris=self.c["compris"].getModel().Label)
 
     def on_aide(self):
+        if self.state == "aide":  # second clic : on referme l'aide
+            return self.on_retour()
         self.prev_state = self.state
         self.state = "aide"
+        self._set("btn_aide", "Fermer l'aide")
         self.layout()
 
     def on_retour(self):
-        self.state = getattr(self, "prev_state", "main")
+        prev = getattr(self, "prev_state", "main")
+        self.state = prev if prev in ("main", "setup", "proposition") else "main"
+        self._set("btn_aide", "Comment ça marche ?")
+        if self.state == "setup":
+            return self.check_setup()
         self.refresh_ideas()
 
     def on_compris(self):

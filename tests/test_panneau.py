@@ -102,6 +102,14 @@ def main():
     t.check(p.state == "aide" and "Vos précautions" in label("aide_txt"), "écran « Comment ça marche ? » avec les précautions")
     p.on_retour()
     t.check(p.state == "main", "retour depuis l'aide")
+    class _Ev:
+        def __init__(self, c): self.ActionCommand = c
+    p.actionPerformed(_Ev("btn_aide"))
+    p.actionPerformed(_Ev("btn_aide"))  # double clic sur l'aide : la referme
+    t.check(p.state == "main", "second clic sur l'aide : retour à l'accueil")
+    p.actionPerformed(_Ev("btn_aide"))
+    p.actionPerformed(_Ev("btn_retour"))
+    t.check(p.state == "main" and label("btn_aide") == "Comment ça marche ?", "bouton Retour via l'interface")
     t.check(not p.cfg.get("accueil_vu") and "copie" in label("bienvenue"), "message d'accueil prudent au premier lancement")
     p.on_compris()
     t.check(p.cfg.get("accueil_vu"), "« J'ai compris » masque l'accueil")
