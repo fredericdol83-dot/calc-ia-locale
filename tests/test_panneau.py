@@ -2,7 +2,7 @@
 """Test du panneau latéral sans interface graphique réelle, avec un faux Ollama.
 LibreOffice headless sur le port 2002, puis : python3 tests/test_panneau.py"""
 import json, os, shutil, sys, tempfile, threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer as HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -36,6 +36,9 @@ class FakeOllama(BaseHTTPRequestHandler):
             STATE["models"].append(body["model"])
             return self._send(None, [{"status": "pulling", "total": 100, "completed": 50},
                                      {"status": "success"}])
+        if body["messages"][-1]["content"] == "lent":
+            import time as _t
+            _t.sleep(3)
         self._send({"message": {"content": json.dumps(
             {"action": "tableau_croise", "colonne": "Ville", "colonne_valeurs": "Montant devis (€)",
              "operation": "moyenne"})}})
@@ -71,6 +74,10 @@ def main():
 
     p.on_idea(2)  # doublons
     t.check(p.state == "proposition" and "104" in p.c["details"].getText(), "clic sur une idée : proposition chiffrée sans passer par le modèle")
+    t.check("supprime 104" in label("risk"), "prudence : la suppression est signalée avant d'appliquer")
+    p.on_copie()
+    backups = [f for f in os.listdir(os.path.dirname(tmp)) if "sauvegarde" in f]
+    t.check(len(backups) == 1, "bouton copie de sauvegarde : %s" % backups)
     p.on_appliquer()
     n = len(dialog.actions.Table(doc.Sheets.getByIndex(0)).rows)
     t.check(n == 201 and p.done_text, "Appliquer : 201 contacts et bandeau « C'est fait »")
@@ -90,6 +97,20 @@ def main():
     t.check(len(villes) == 8 and p.plan.prereq is None, "harmonisation faite, proposition recalculée sans avertissement")
     p.on_modifier()
     t.check(p.state == "main", "Modifier ma demande : retour à l'accueil")
+
+    p.on_aide()
+    t.check(p.state == "aide" and "Vos précautions" in label("aide_txt"), "écran « Comment ça marche ? » avec les précautions")
+    p.on_retour()
+    t.check(p.state == "main", "retour depuis l'aide")
+    t.check(not p.cfg.get("accueil_vu") and "copie" in label("bienvenue"), "message d'accueil prudent au premier lancement")
+    p.on_compris()
+    t.check(p.cfg.get("accueil_vu"), "« J'ai compris » masque l'accueil")
+
+    import threading as _th
+    p.c["demande"].setText("lent")
+    _th.Timer(0.7, p.on_stop).start()
+    p.on_proposer()
+    t.check("arrêtée" in p.c["details"].getText(), "bouton Arrêter : demande abandonnée, rien de modifié")
 
     STATE["models"] = []
     p.check_setup()

@@ -116,6 +116,7 @@ class Plan:
         self._apply = apply_fn
         self.changes = changes      # 0 = rien à faire
         self.prereq = None          # action conseillée avant (ex. harmoniser une colonne mal écrite)
+        self.risk = None            # phrase de prudence si l'action supprime ou modifie des données
 
     def apply(self, doc):
         um = doc.getUndoManager()
@@ -211,7 +212,9 @@ def prepare_normaliser_texte(table, colonne, casse=""):
     note = _formula_note(len(formulas))
     if note:
         details.append(note)
-    return Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
+    plan = Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
+    plan.risk = "Cette action modifie %d cellule(s) de vos données." % len(pairs)
+    return plan
 
 # ---------------------------------------------------------------------------
 # 2. Formater des téléphones français
@@ -256,7 +259,9 @@ def prepare_formater_telephone(table, colonne):
     note = _formula_note(len(formulas))
     if note:
         details.append(note)
-    return Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
+    plan = Plan(title, details, lambda: _write_changes(table, i, changes), len(pairs))
+    plan.risk = "Cette action modifie %d cellule(s) de vos données." % len(pairs)
+    return plan
 
 # ---------------------------------------------------------------------------
 # 3. Supprimer les doublons
@@ -300,7 +305,9 @@ def prepare_supprimer_doublons(table, colonne):
     if dup:
         ex = table.rows[dup[0]][i]
         details.append("  Exemple de doublon : « %s » (ligne %d)" % (ex, table.r0 + dup[0] + 2))
-    return Plan(title, details, apply, len(dup))
+    plan = Plan(title, details, apply, len(dup))
+    plan.risk = "Cette action supprime %d ligne(s) de vos données." % len(dup)
+    return plan
 
 
 def _blocks(sorted_rows):

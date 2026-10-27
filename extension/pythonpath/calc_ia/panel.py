@@ -2,6 +2,7 @@
 """Panneau latéral « IA locale » (à droite du tableur, comme Copilot dans Excel, mais 100 % local).
 
 États : installation (Ollama ou modèle manquant), accueil (idées + demande), proposition, fait."""
+import threading
 import time
 import traceback
 
@@ -15,6 +16,23 @@ from calc_ia.dialog import load_config, save_config, DEFAULTS, GENERATED_PREFIXE
 TEAL, TEAL_BG, GREY, RED, AMBER_BG, LIGHT = 0x0E7C66, 0xE3F3EE, 0x56686F, 0xB42318, 0xFFF7E6, 0xF4F7F6
 OLLAMA_URL = "https://ollama.com/download"
 MAX_IDEAS = 5
+AIDE = (
+    "Ce que fait l'IA\n"
+    "Elle lit seulement les noms de vos colonnes et votre phrase, puis choisit une action parmi six. "
+    "Les calculs et les idées affichées sont faits par l'extension elle-même, sans IA.\n\n"
+    "Ce qui reste sur votre ordinateur\n"
+    "Tout. Le modèle tourne grâce à Ollama, sans Internet une fois installé. L'extension refuse de "
+    "parler à une autre adresse que votre propre PC.\n\n"
+    "Vos précautions\n"
+    "Travaillez sur une copie de vos fichiers importants. Lisez l'aperçu avant d'appliquer. "
+    "Pour une suppression, enregistrez une copie de sauvegarde avec le bouton prévu. "
+    "« Annuler cette action » revient en arrière.\n\n"
+    "Les limites\n"
+    "Six actions seulement, téléphones français uniquement. Le modèle peut se tromper sur un détail : "
+    "c'est pour cela que vous validez toujours. Les formules ne sont jamais modifiées, et une feuille "
+    "protégée n'est pas touchée.\n\n"
+    "En savoir plus : le guide et le code sont publics sur GitHub (calc-ia-locale)."
+)
 M = 6  # marge, en unités de dialogue
 
 
@@ -34,6 +52,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         self.created_sheet = None
         self.height_px = 600
         self.c = {}
+        self.busy = False
+        self.cancelled = False
 
         self.cont = self.smgr.createInstanceWithContext("com.sun.star.awt.UnoControlContainer", ctx)
         self.cont.setModel(self.smgr.createInstanceWithContext("com.sun.star.awt.UnoControlContainerModel", ctx))
@@ -71,6 +91,15 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
     def _build(self):
         L, B = self._label, lambda n, t: self._ctl("Button", n, Label=t, MultiLine=True)
         L("etat", "", bold=True, color=TEAL)
+        B("btn_aide", "Comment ça marche ?")
+        # accueil (une seule fois)
+        L("bienvenue", "Bienvenue. Ici, l'IA propose et vous validez : rien ne change sans votre accord. "
+                       "Par prudence, travaillez sur une copie de vos fichiers importants.", bg=TEAL_BG)
+        B("btn_compris", "J'ai compris")
+        # aide
+        L("aide_t", "Comment ça marche ?", bold=True)
+        L("aide_txt", AIDE)
+        B("btn_retour", "Retour")
         # installation
         L("setup_t", "", bold=True)
         L("setup_txt", "")
@@ -98,6 +127,7 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         L("q", "Ou décrivez votre demande", bold=True)
         self._ctl("Edit", "demande", MultiLine=True, VScroll=False)
         B("btn_proposer", "Proposer")
+        B("btn_stop", "Arrêter")
         self.c["btn_proposer"].getModel().DefaultButton = True
         L("statut", "", color=TEAL)
         L("cap_t", "Ce que je sais faire", bold=True, bg=LIGHT)
@@ -112,12 +142,24 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         L("compris", "", color=GREY)
         L("prereq_t", "", bg=AMBER_BG)
         B("btn_prereq", "")
+        L("risk", "", bg=AMBER_BG)
+        B("btn_copie", "Enregistrer d'abord une copie de sauvegarde")
+        L("copie_ok", "", color=TEAL)
         L("safe", "Rien n'a encore été modifié. Vérifiez, puis appliquez.", bg=AMBER_BG)
         B("btn_appliquer", "Appliquer")
         B("btn_modifier", "Modifier ma demande")
         # historique et pied
         L("hist_t", "Historique de la session", bold=True)
         self._ctl("ListBox", "hist")
+        tips = {"btn_proposer": "Le modèle local choisit une action. Rien n'est modifié avant votre clic sur Appliquer.",
+                "btn_appliquer": "Applique la proposition. Vous pourrez annuler juste après.",
+                "btn_annuler": "Revient à l'état d'avant la dernière action.",
+                "btn_actualiser": "Relit le tableau et recalcule les idées.",
+                "btn_copie": "Crée une copie datée du fichier, à côté de l'original."}
+        for k in range(MAX_IDEAS):
+            tips["idee%d" % k] = "Affiche une proposition chiffrée. Rien n'est modifié à ce stade."
+        for name, tip in tips.items():
+            self.c[name].getModel().HelpText = tip
         L("modele_k", "Modèle :", color=GREY)
         self._ctl("ComboBox", "modele", Dropdown=True, LineCount=8, Text=self.cfg["model"])
         L("offline", "Hors ligne, rien n'est envoyé sur Internet", color=GREY)
@@ -126,11 +168,16 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
     def _rows(self, W):
         """Lignes à afficher selon l'état : (liste de (nom, x, largeur), hauteur)."""
         full = lambda n, h: ([(n, M, W - 2 * M)], h)
-        rows = [full("etat", 12), (None, 2)]
+        rows = [([("etat", M, W - 2 * M - 82), ("btn_aide", W - M - 80, 80)], 14), (None, 2)]
         s = self.state
+        if s == "aide":
+            rows += [full("aide_t", 12), full("aide_txt", 250), ([("btn_retour", M, 60)], 16)]
+        if s == "main" and not self.cfg.get("accueil_vu"):
+            rows += [full("bienvenue", 30), ([("btn_compris", M, 70)], 16), (None, 6)]
         if s == "setup":
             rows += [full("setup_t", 22), full("setup_txt", 44), full("btn_ollama", 16), (None, 3),
-                     full("btn_dl", 16), full("progress", 20), full("btn_verifier", 16)]
+                     full("btn_dl", 16), full("progress", 20),
+                     full("btn_stop" if self.busy else "btn_verifier", 16)]
         if s == "main" and self.done_text:
             rows += [full("done_t", 12), full("done_txt", 22),
                      ([("btn_annuler", M, 90)], 16), (None, 8)]
@@ -148,7 +195,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             if not self.ideas:
                 rows.append(full("aucune", 12))
             rows += [(None, 6), full("q", 11), full("demande", 30),
-                     ([("statut", M, W - 2 * M - 62), ("btn_proposer", W - M - 60, 60)], 16), (None, 6),
+                     ([("statut", M, W - 2 * M - 62),
+                       ("btn_stop" if self.busy else "btn_proposer", W - M - 60, 60)], 16), (None, 6),
                      full("cap_t", 11), full("cap_n", 30), full("cap_a", 22), full("cap_p", 30)]
         if s == "proposition":
             rows += [full("vous", 20), (None, 4), full("prop_k", 9), full("prop_t", 28)]
@@ -157,6 +205,11 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
             rows += [full("details", 84), (None, 3)]
             if self.plan is not None and self.plan.prereq:
                 rows += [full("prereq_t", 22), full("btn_prereq", 16), (None, 4)]
+            if self.plan is not None and self.plan.risk:
+                rows += [full("risk", 12), full("btn_copie", 16)]
+                if self.c["copie_ok"].getModel().Label:
+                    rows.append(full("copie_ok", 20))
+                rows.append((None, 4))
             rows += [full("safe", 12), (None, 4),
                      ([("btn_appliquer", M, (W - 2 * M) * 0.55),
                        ("btn_modifier", M + (W - 2 * M) * 0.58, (W - 2 * M) * 0.42)], 18)]
@@ -234,6 +287,46 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
                 break
             except Exception:
                 continue
+
+    def _pump(self):
+        for m in ("processEventsToIdle", "reschedule"):
+            try:
+                getattr(self.toolkit, m)()
+                return
+            except Exception:
+                continue
+
+    def _run_bg(self, fn, on_tick=None):
+        """Exécute fn (sans appel à LibreOffice) en arrière-plan : l'interface reste réactive
+        et le bouton Arrêter permet d'abandonner."""
+        box = {}
+
+        def work():
+            try:
+                box["ok"] = fn()
+            except Exception as e:
+                box["err"] = e
+        th = threading.Thread(target=work, daemon=True)
+        self.busy, self.cancelled = True, False
+        self.layout()
+        th.start()
+        try:
+            while th.is_alive() and not self.cancelled:
+                if on_tick:
+                    on_tick()
+                self._pump()
+                time.sleep(0.05)
+        finally:
+            self.busy = False
+            self.layout()
+        if self.cancelled:
+            raise llm.LLMError("Demande arrêtée. Rien n'a été modifié.")
+        if "err" in box:
+            raise box["err"]
+        return box.get("ok")
+
+    def on_stop(self):
+        self.cancelled = True
 
     def check_setup(self):
         model = self.c["modele"].getText().strip() or DEFAULTS["model"]
@@ -313,6 +406,8 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
     # ------------------------------------------------------------ actions
     def actionPerformed(self, ev):
         cmd = ev.ActionCommand
+        if self.busy and cmd != "btn_stop":
+            return  # une seule chose à la fois
         try:
             if cmd.startswith("idee"):
                 self.on_idea(int(cmd[4:]))
@@ -334,6 +429,12 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
 
     def _show_plan(self, echo, plan, seconds=None, choice=None, compris=""):
         self.plan = plan if plan.changes else None
+        self._set("copie_ok", "")
+        if plan.risk:
+            self._set("risk", plan.risk)
+            self.c["btn_copie"].getModel().Enabled = bool(self._doc().hasLocation())
+            if not self._doc().hasLocation():
+                self._set("copie_ok", "Conseil : enregistrez d'abord votre fichier (Fichier > Enregistrer).")
         self.last = (echo, choice)
         self._set("compris", compris)
         if plan.prereq:
@@ -374,8 +475,10 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         t0 = time.time()
         try:
             table = actions.Table(sheet)
-            choice = llm.choose_action(self.cfg["url"], modele, table.headers, demande,
-                                       allow_remote=self.cfg.get("serveur_distant_autorise", False))
+            headers, url = table.headers, self.cfg["url"]
+            remote = self.cfg.get("serveur_distant_autorise", False)
+            choice = self._run_bg(lambda: llm.choose_action(url, modele, headers, demande, timeout=60,
+                                                            allow_remote=remote))
             plan = actions.prepare(self._doc(), sheet, choice)
         except (llm.LLMError, actions.ActionError) as e:
             self._busy("")
@@ -411,6 +514,31 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         echo, choice = self.last
         plan = actions.prepare(doc, sheet, choice)
         self._show_plan(echo, plan, choice=choice, compris=self.c["compris"].getModel().Label)
+
+    def on_aide(self):
+        self.prev_state = self.state
+        self.state = "aide"
+        self.layout()
+
+    def on_retour(self):
+        self.state = getattr(self, "prev_state", "main")
+        self.refresh_ideas()
+
+    def on_compris(self):
+        self.cfg["accueil_vu"] = True
+        save_config(self.cfg)
+        self.layout()
+
+    def on_copie(self):
+        """Enregistre une copie datée du fichier à côté de l'original, sans changer le document ouvert."""
+        doc = self._doc()
+        url = doc.getURL()
+        base, dot, ext = url.rpartition(".")
+        target = "%s-sauvegarde-%s.%s" % (base if dot else url, time.strftime("%Y%m%d-%H%M%S"), ext if dot else "ods")
+        doc.storeToURL(target, ())
+        self._set("copie_ok", "Copie enregistrée : " + uno.fileUrlToSystemPath(target))
+        self.c["btn_copie"].getModel().Enabled = False
+        self.layout()
 
     def on_modifier(self):
         self.state, self.plan = "main", None
@@ -449,11 +577,14 @@ class AssistantPanel(unohelper.Base, XActionListener, XWindowListener):
         model = self.c["modele"].getText().strip() or DEFAULTS["model"]
         self.c["btn_dl"].getModel().Enabled = False
 
-        def progress(status, frac):
-            self._busy("Téléchargement : %d %%" % int(frac * 100) if frac is not None else status)
+        state = {"txt": "Connexion à Ollama…"}
+
+        def progress(status, frac):  # appelé depuis le fil d'arrière-plan : on ne touche pas à l'interface
+            state["txt"] = "Téléchargement : %d %%" % int(frac * 100) if frac is not None else status
+        url, remote = self.cfg["url"], self.cfg.get("serveur_distant_autorise", False)
         try:
-            llm.pull_model(self.cfg["url"], model, progress,
-                           allow_remote=self.cfg.get("serveur_distant_autorise", False))
+            self._run_bg(lambda: llm.pull_model(url, model, progress, allow_remote=remote),
+                         on_tick=lambda: self._set("progress", state["txt"]))
         except llm.LLMError as e:
             self._busy(str(e))
             self.c["btn_dl"].getModel().Enabled = True
